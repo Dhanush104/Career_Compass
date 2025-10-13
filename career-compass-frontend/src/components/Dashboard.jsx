@@ -9,7 +9,63 @@ import {
 import LandingPage from './LandingPage.jsx'; 
 
 
+// --- LoginPage Component ---
+const LoginPage = ({ onLogin }) => {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
 
+    const handleLoginAttempt = (e) => {
+        e.preventDefault();
+        // Simulate checking credentials. Use your own logic here.
+        if (username === 'user' && password === 'password') {
+            setError('');
+            const userData = { username: 'Dhanush', email: 'dhanush@example.com' };
+            // If successful, call the function from App.jsx
+            onLogin(userData);
+        } else {
+            setError('Invalid username or password. (Hint: user / password)');
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+            <div className="flex items-center space-x-4 mb-8">
+                <span className="w-12 h-12 bg-yellow-400 rounded-lg flex items-center justify-center font-bold text-white text-2xl">U</span>
+                <h1 className="text-4xl font-bold text-gray-800">UNDERRATED CODER</h1>
+            </div>
+            <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-md">
+                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Login to Your Dashboard</h2>
+                <form onSubmit={handleLoginAttempt} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600">Username</label>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
+                            placeholder="user"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600">Password</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
+                            placeholder="password"
+                        />
+                    </div>
+                    {error && <p className="text-sm text-red-600">{error}</p>}
+                    <button type="submit" className="w-full px-6 py-3 bg-yellow-400 text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors">
+                        Login
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 
 
@@ -778,25 +834,38 @@ const Dashboard = ({ onLogout, user }) => {
 };
 
 // App wrapper with default user
+// --- App Component (The Main Controller) ---
 const App = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(true);
-    const defaultUser = { username: 'John Doe', email: 'john@example.com' };
+    // Manages the current user. null means logged out.
+    const [user, setUser] = useState(null);
 
-    return isLoggedIn ? (
-        <Dashboard onLogout={() => setIsLoggedIn(false)} user={defaultUser} />
+    // This runs once when the app starts to check for a saved session.
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
+    // This function is called when login is successful.
+    const handleLogin = (userData) => {
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+    };
+
+    // This function is called when the user clicks "Logout".
+    const handleLogout = () => {
+        setUser(null);
+        localStorage.removeItem('user'); // Clear the session
+        localStorage.removeItem('careerPaths'); // Optional: also clear the roadmap
+    };
+
+    // If a 'user' exists, show the Dashboard. Otherwise, show the LoginPage.
+    return user ? (
+        <Dashboard onLogout={handleLogout} user={user} />
     ) : (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-                <h1 className="text-3xl font-bold mb-4">Logged Out</h1>
-                <button 
-                    onClick={() => setIsLoggedIn(true)} 
-                    className="px-6 py-3 bg-yellow-400 text-black font-semibold rounded-lg hover:bg-yellow-500"
-                >
-                    Login Again
-                </button>
-            </div>
-        </div>
+        <LoginPage onLogin={handleLogin} />
     );
 };
 
-export default App;
+export default Dashboard;
