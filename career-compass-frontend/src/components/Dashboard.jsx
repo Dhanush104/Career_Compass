@@ -356,6 +356,17 @@ const Dashboard = ({ onLogout, user }) => {
                         </ul>
                         <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Discover</p>
                         <ul className="space-y-2">
+                            <li>
+                                <a 
+                                    href="https://discord.gg/q7RjKEss" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="w-full flex items-center space-x-3 p-3 rounded-lg font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                                >
+                                    <Users size={20} />
+                                    <span>Join Community</span>
+                                </a>
+                            </li>
                             <NavButton tabName="freeCourses" icon={<BookOpen size={20} />} label="Free Courses" />
                             <NavButton tabName="mentorship" icon={<Users size={20} />} label="1:1 Mentorship" />
                             <NavButton tabName="placement" icon={<Briefcase size={20} />} label="Placement" />

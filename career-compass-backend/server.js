@@ -5,6 +5,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const morgan = require('morgan');
+
 
 // Load environment variables from .env file
 dotenv.config();
@@ -15,6 +17,8 @@ const app = express();
 // Middleware
 app.use(express.json()); // Allows us to accept JSON data in the body
 app.use(cors()); // Enables Cross-Origin Resource Sharing
+app.use(morgan('dev'));
+
 
 // Define the port to run the server on
 const PORT = process.env.PORT || 5000;
@@ -41,10 +45,14 @@ app.get('/', (req, res) => {
 });
 
 const authRoutes = require('./routes/auth');
-const roadmapRoutes = require('./routes/roadmap')
+const roadmapRoutes = require('./routes/roadmap');
+// Import and use the blog post routes
+const postRoutes = require('./routes/postRoutes');
+
+app.use('/api/posts', postRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/roadmap', roadmapRoutes);
 
 // Start the server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
