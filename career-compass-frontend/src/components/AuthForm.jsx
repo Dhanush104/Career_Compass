@@ -73,17 +73,17 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-gray-900/50 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] bg-neutral-900/50 backdrop-blur-md flex items-center justify-center p-4">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.8, opacity: 0 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        className="relative w-full max-w-2xl h-auto md:h-[500px] rounded-3xl bg-white shadow-2xl border border-white/20 flex flex-col md:flex-row overflow-hidden"
+        className="relative w-full max-w-2xl h-auto md:h-[500px] rounded-3xl bg-white dark:bg-neutral-900 shadow-2xl border border-surface-200 dark:border-neutral-800 flex flex-col md:flex-row overflow-hidden"
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-50 p-2 rounded-full"
+          className="absolute top-4 right-4 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors z-50 p-2 rounded-full"
           aria-label="Close form"
         >
           <X size={24} />
@@ -92,10 +92,10 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
         {/* Left Section - Form */}
         <div className="md:w-1/2 flex items-center justify-center p-6 md:p-8">
           <div className="w-full max-w-sm">
-            <h2 className="text-3xl font-extrabold text-center mb-4 text-gray-900 drop-shadow-sm">
+            <h2 className="text-3xl font-extrabold text-center mb-4 text-neutral-900 dark:text-neutral-100 drop-shadow-sm">
               {isLogin ? "Welcome Back!" : "Create Your Journey"}
             </h2>
-            <p className="text-center text-gray-600 mb-6 text-sm">
+            <p className="text-center text-neutral-600 dark:text-neutral-400 mb-6 text-sm">
               {isLogin ? "Login to continue your career path." : "Sign up to begin your personalized roadmap."}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -105,7 +105,7 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                 animate="visible"
                 transition={{ delay: 0.1 }}
               >
-                <label className="block text-sm font-medium text-gray-800 mb-1">
+                <label className="block text-sm font-medium text-neutral-800 dark:text-neutral-200 mb-1">
                   Username
                 </label>
                 <div className="relative">
@@ -113,15 +113,15 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className={`block w-full px-10 py-2 border rounded-lg bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.username ? "border-red-500" : "border-gray-300"
+                    className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${
+                      fieldErrors.username ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
                     }`}
                     placeholder="Your username"
                   />
-                  <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
                 </div>
                 {fieldErrors.username && (
-                  <p className="text-red-500 text-xs mt-1" role="alert" aria-live="assertive">{fieldErrors.username}</p>
+                  <p className="text-error-500 text-xs mt-1" role="alert" aria-live="assertive">{fieldErrors.username}</p>
                 )}
               </motion.div>
 
@@ -135,7 +135,7 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                     exit="hidden"
                     transition={{ delay: 0.1 }}
                   >
-                    <label className="block text-sm font-medium text-gray-800 mb-1">
+                    <label className="block text-sm font-medium text-neutral-800 dark:text-neutral-200 mb-1">
                       Email
                     </label>
                     <div className="relative">
@@ -143,15 +143,15 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`block w-full px-10 py-2 border rounded-lg bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all duration-300 ${
-                          fieldErrors.email ? "border-red-500" : "border-gray-300"
+                        className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${
+                          fieldErrors.email ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
                         }`}
                         placeholder="you@example.com"
                       />
-                      <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
                     </div>
                     {fieldErrors.email && (
-                      <p className="text-red-500 text-xs mt-1" role="alert" aria-live="assertive">{fieldErrors.email}</p>
+                      <p className="text-error-500 text-xs mt-1" role="alert" aria-live="assertive">{fieldErrors.email}</p>
                     )}
                   </motion.div>
                 )}
@@ -163,7 +163,7 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                 animate="visible"
                 transition={{ delay: isLogin ? 0.2 : 0.3 }}
               >
-                <label className="block text-sm font-medium text-gray-800 mb-1">
+                <label className="block text-sm font-medium text-neutral-800 dark:text-neutral-200 mb-1">
                   Password
                 </label>
                 <div className="relative">
@@ -171,27 +171,27 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`block w-full px-10 py-2 border rounded-lg bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.password ? "border-red-500" : "border-gray-300"
+                    className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${
+                      fieldErrors.password ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
                     }`}
                     placeholder="••••••••"
                   />
-                  <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
                 </div>
                 {fieldErrors.password && (
-                  <p className="text-red-500 text-xs mt-1" role="alert" aria-live="assertive">{fieldErrors.password}</p>
+                  <p className="text-error-500 text-xs mt-1" role="alert" aria-live="assertive">{fieldErrors.password}</p>
                 )}
               </motion.div>
 
               {error && (
-                <p className="text-red-500 text-sm text-center" role="alert" aria-live="assertive">{error}</p>
+                <p className="text-error-500 text-sm text-center" role="alert" aria-live="assertive">{error}</p>
               )}
 
               <motion.button
                 type="submit"
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full flex justify-center py-2 px-4 rounded-lg font-semibold text-white bg-gradient-to-r from-teal-500 to-rose-500 hover:from-teal-600 hover:to-rose-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-300 ${
+                className={`w-full flex justify-center py-2 px-4 rounded-lg font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 ${
                   loading ? "opacity-50 cursor-not-allowed" : ""
                 }`}
                 disabled={loading}
@@ -200,7 +200,7 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
               </motion.button>
             </form>
 
-            <p className="mt-4 text-center text-sm text-gray-700">
+            <p className="mt-4 text-center text-sm text-neutral-700 dark:text-neutral-300">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <motion.button
                 type="button"
@@ -211,7 +211,7 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="font-medium text-teal-700 hover:text-teal-600 ml-1 transition-colors"
+                className="font-medium text-primary-700 dark:text-primary-400 hover:text-primary-600 dark:hover:text-primary-300 ml-1 transition-colors"
               >
                 {isLogin ? "Sign Up" : "Login"}
               </motion.button>
@@ -220,7 +220,7 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
         </div>
 
         {/* Right Section - Static SVG */}
-        <div className="hidden md:flex md:w-1/2 relative items-center justify-center p-8 bg-gradient-to-br from-teal-100/50 to-rose-100/50 rounded-r-3xl backdrop-blur-md">
+        <div className="hidden md:flex md:w-1/2 relative items-center justify-center p-8 bg-gradient-to-br from-primary-100/50 to-accent-100/50 dark:from-primary-900/20 dark:to-accent-900/20 rounded-r-3xl backdrop-blur-md">
           <svg className="w-full h-full max-w-sm" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <style>
               {`

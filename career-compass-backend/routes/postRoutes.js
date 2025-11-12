@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
 
+const authMiddleware = require('../middleware/authMiddleware');
+
 // ✅ GET all posts
 router.get('/', async (req, res) => {
   try {
@@ -25,7 +27,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // ✅ POST new blog post
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => { 
   try {
     const { title, content, authorName } = req.body;
     const newPost = new Post({ title, content, authorName });

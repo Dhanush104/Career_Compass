@@ -1,50 +1,40 @@
 import React, { useState, useEffect } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
+
+// Add components back step by step
 import LandingPage from './components/LandingPage.jsx';
 import AuthForm from './components/AuthForm.jsx';
 import Dashboard from './components/Dashboard.jsx';
-import Preloader from './components/Preloader.jsx';
-import { Toaster, toast } from 'react-hot-toast';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
+  // Simple authentication check
   useEffect(() => {
-    // Check for authentication token and validate it
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
     if (token) {
       try {
-        // If we have a stored user, parse it
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         }
         setIsLoggedIn(true);
-        setLoading(false);
       } catch (error) {
         console.error("Error parsing stored user data:", error);
-        // Clear invalid data
         localStorage.removeItem('user');
-        setLoading(false);
       }
-    } else {
-      // No token, finish loading
-      setLoading(false);
     }
   }, []);
 
   const handleAuthSuccess = (token, userData) => {
     localStorage.setItem('token', token);
-    
-    // Store user data if available
     if (userData) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
     }
-    
     setIsLoggedIn(true);
     setShowAuth(false);
     toast.success('Successfully logged in!');
@@ -66,44 +56,49 @@ function App() {
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#333',
-            color: '#fff',
-            borderRadius: '8px',
-          },
-          success: {
-            iconTheme: {
-              primary: '#10B981',
-              secondary: '#FFFFFF',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#EF4444',
-              secondary: '#FFFFFF',
-            },
+            background: '#ffffff',
+            color: '#1f2937',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb',
           },
         }}
       />
       
-      {loading ? (
-        <Preloader />
+      {/* Debug info */}
+      <div style={{ 
+        position: 'fixed', 
+        top: '10px', 
+        right: '10px', 
+        background: 'rgba(0,0,0,0.8)', 
+        color: 'white', 
+        padding: '10px', 
+        borderRadius: '5px',
+        fontSize: '12px',
+        zIndex: 9999
+      }}>
+        Status: {isLoggedIn ? 'Logged In' : 'Not Logged In'}
+      </div>
+      
+      {/* Test Dashboard step by step */}
+      {isLoggedIn ? (
+        <Dashboard 
+          onLogout={handleLogout} 
+          user={user}
+          onUserUpdate={(updatedUserData) => {
+            setUser(updatedUserData);
+            localStorage.setItem('user', JSON.stringify(updatedUserData));
+          }} 
+        />
       ) : (
-        <div className="animate-fade-in">
-          {/* Render content based on login state */}
-          {isLoggedIn ? (
-            <Dashboard onLogout={handleLogout} user={user} />
-          ) : (
-            <LandingPage onLoginClick={() => setShowAuth(true)} />
-          )}
+        <LandingPage onLoginClick={() => setShowAuth(true)} />
+      )}
 
-          {/* Conditionally render the AuthForm as a pop-up modal */}
-          {showAuth && (
-            <AuthForm
-              onAuthSuccess={handleAuthSuccess}
-              onClose={() => setShowAuth(false)}
-            />
-          )}
-        </div>
+      {/* Add AuthForm modal */}
+      {showAuth && (
+        <AuthForm
+          onAuthSuccess={handleAuthSuccess}
+          onClose={() => setShowAuth(false)}
+        />
       )}
     </div>
   );

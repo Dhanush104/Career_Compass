@@ -48,11 +48,20 @@ const authRoutes = require('./routes/auth');
 const roadmapRoutes = require('./routes/roadmap');
 // Import and use the blog post routes
 const postRoutes = require('./routes/postRoutes');
-
-app.use('/api/posts', postRoutes);
+const userRoutes = require('./routes/userRoutes');
+const reportCardRoutes = require('./routes/reportCard');
+const goalRoutes = require('./routes/goals');
+const analyticsRoutes = require('./routes/analytics');
+const communityRoutes = require('./routes/community');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/roadmap', roadmapRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/report-card', reportCardRoutes);
+app.use('/api/goals', goalRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/community', communityRoutes);
 
 // Start the server
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

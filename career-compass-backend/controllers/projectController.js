@@ -29,3 +29,22 @@ exports.getProjects = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch projects.' });
     }
 };
+
+exports.deleteProject = async (req, res) => {
+    const { projectId } = req.params;
+    const userId = req.user._id;
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+
+        // Remove project from user's projects array
+        user.projects = user.projects.filter(project => project._id.toString() !== projectId);
+        
+        await user.save();
+        res.status(200).json({ success: true, projects: user.projects });
+    } catch (err) {
+        console.error('Delete project error:', err);
+        res.status(500).json({ error: 'Failed to delete project.' });
+    }
+};

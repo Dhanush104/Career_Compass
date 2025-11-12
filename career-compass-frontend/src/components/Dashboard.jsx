@@ -1,838 +1,1126 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Compass, Star, RefreshCw, BarChart3, LogOut, Menu, X, TrendingUp, 
     Award, User as UserIcon, ExternalLink, FolderKanban, Users, 
     PlusCircle, Bell, Calendar, Zap, Search, Filter, 
     Trash2, BookMarked, Target, Trophy, Flame, Code, BookOpen, Mic, 
-    Briefcase, Rocket, ChevronDown, Circle, CheckCircle, PlayCircle
+    Briefcase, Rocket, ChevronDown, Circle, CheckCircle, PlayCircle, ArrowLeft,
+    MessageCircle, FileText, Clock, Activity
 } from 'lucide-react';
-import LandingPage from './LandingPage.jsx'; 
+import { toast, Toaster } from 'react-hot-toast'; // You may need to run: npm install react-hot-toast
+import UserProfile from './UserProfile.jsx';
+import SkillsManager from './SkillsManager.jsx'; 
+import FreeCourses from './FreeCourses.jsx';
+import Mentorship from './Mentorship.jsx';
+import Placement from './Placement.jsx';
+import Podcast from './Podcast.jsx';
+import CreatePost from './CreatePost.jsx';
+import ReportCard from './ReportCard.jsx';
+import AddProjectModal from './AddProjectModal.jsx';
+// Add back components one by one to test
+import InterviewPrep from './InterviewPrep.jsx';
+import ResumeBuilder from './ResumeBuilder.jsx';
+import CodingChallenges from './CodingChallenges.jsx';
+import GoalTracker from './GoalTracker.jsx';
+import SimpleAnalyticsBasic from './SimpleAnalyticsBasic.jsx';
+import ErrorBoundary from './ErrorBoundary.jsx';
+import { EnhancedRoadmap, EnhancedProjects } from './EnhancedComponents';
+
+// --- LoginPage Component (Handles Login UI and Logic) ---
 
 
-// --- LoginPage Component ---
-const LoginPage = ({ onLogin }) => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-
-    const handleLoginAttempt = (e) => {
-        e.preventDefault();
-        // Simulate checking credentials. Use your own logic here.
-        if (username === 'user' && password === 'password') {
-            setError('');
-            const userData = { username: 'Dhanush', email: 'dhanush@example.com' };
-            // If successful, call the function from App.jsx
-            onLogin(userData);
-        } else {
-            setError('Invalid username or password. (Hint: user / password)');
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
-            <div className="flex items-center space-x-4 mb-8">
-                <span className="w-12 h-12 bg-yellow-400 rounded-lg flex items-center justify-center font-bold text-white text-2xl">U</span>
-                <h1 className="text-4xl font-bold text-gray-800">UNDERRATED CODER</h1>
-            </div>
-            <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-md">
-                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Login to Your Dashboard</h2>
-                <form onSubmit={handleLoginAttempt} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600">Username</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
-                            placeholder="user"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-amber-500 focus:border-amber-500"
-                            placeholder="password"
-                        />
-                    </div>
-                    {error && <p className="text-sm text-red-600">{error}</p>}
-                    <button type="submit" className="w-full px-6 py-3 bg-yellow-400 text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors">
-                        Login
-                    </button>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-
-
-// Mock career path data
-const mockCareerPathDataFromBackend = [
-    {
-        name: "Full-Stack Web Developer",
-        description: "Master both front-end and back-end technologies to build complete web applications.",
-        milestones: [
-            {
-                title: "Module 1: Frontend Fundamentals",
-                tasks: [ 
-                    { name: "HTML & CSS Basics", completed: true }, 
-                    { name: "JavaScript Essentials", completed: true }, 
-                    { name: "Build a Static Portfolio Website", completed: false } 
-                ]
-            },
-            {
-                title: "Module 2: Advanced Frontend with React",
-                tasks: [ 
-                    { name: "Learn React Components, State, and Props", completed: true }, 
-                    { name: "Master Tailwind CSS for Styling", completed: false }, 
-                    { name: "Project: Build a Dynamic To-Do App", completed: false } 
-                ]
-            }
-        ]
-    }
-];
-
-// Quiz Component
+// --- DYNAMIC QUIZ COMPONENT ---
 const Quiz = ({ onQuizComplete }) => {
-    const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState({});
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-    const questions = [
-        {
-            id: 1,
-            question: "What interests you most?",
-            options: ["Frontend Development", "Backend Development", "Full-Stack Development", "Mobile Development"]
-        },
-        {
-            id: 2,
-            question: "What's your current skill level?",
-            options: ["Beginner", "Intermediate", "Advanced", "Expert"]
-        },
-        {
-            id: 3,
-            question: "What's your learning goal?",
-            options: ["Get a job", "Freelance", "Build my own product", "Learn for fun"]
-        }
-    ];
-
-    const handleAnswer = (answer) => {
-        setAnswers({ ...answers, [currentQuestion]: answer });
-        
-        if (currentQuestion < questions.length - 1) {
-            setCurrentQuestion(currentQuestion + 1);
-        } else {
-            // Quiz complete
-            setTimeout(() => {
-                onQuizComplete(mockCareerPathDataFromBackend);
-            }, 500);
-        }
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/roadmap/quiz');
+        if (!response.ok) throw new Error('Failed to fetch quiz questions.');
+        const data = await response.json();
+        setQuestions(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
+    fetchQuestions();
+  }, []);
 
-    return (
-        <div className="max-w-2xl mx-auto">
-            <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
-                <div className="mb-6">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-500">Question {currentQuestion + 1} of {questions.length}</span>
-                        <span className="text-sm font-semibold text-amber-600">{Math.round(((currentQuestion + 1) / questions.length) * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                            className="bg-amber-500 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
-                        />
-                    </div>
-                </div>
+  const submitAnswers = async (finalAnswers) => {
+    setLoading(true);
+    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/roadmap/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ answers: finalAnswers }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to generate recommendations.');
+      onQuizComplete(data.recommendations);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
 
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">{questions[currentQuestion].question}</h2>
+  const handleOptionSelect = (option) => {
+    const currentQuestion = questions[currentQuestionIndex];
+    const newAnswer = { questionId: currentQuestion._id, optionText: option.optionText };
+    const updatedAnswers = [...selectedAnswers, newAnswer];
+    setSelectedAnswers(updatedAnswers);
 
-                <div className="space-y-3">
-                    {questions[currentQuestion].options.map((option, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => handleAnswer(option)}
-                            className="w-full text-left p-4 rounded-lg border-2 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition-all"
-                        >
-                            <span className="text-gray-800 font-medium">{option}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      submitAnswers(updatedAnswers);
+    }
+  };
+
+  if (loading) return <div className="text-center p-12 text-neutral-600 dark:text-neutral-400">Loading Quiz...</div>;
+  if (error) return <div className="text-center p-12 text-error-600 dark:text-error-400">Error: {error}</div>;
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-lg border border-surface-200 dark:border-neutral-800">
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Question {currentQuestionIndex + 1} of {questions.length}</span>
+            <span className="text-sm font-semibold text-warning-600 dark:text-warning-400">{Math.round(progress)}%</span>
+          </div>
+          <div className="w-full bg-surface-200 dark:bg-neutral-700 rounded-full h-2">
+            <div className="bg-warning-500 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+          </div>
         </div>
-    );
-};
-
-// Add Project Modal
-const AddProjectModal = ({ isOpen, onClose, onAddProject }) => {
-    const [formData, setFormData] = useState({ 
-        title: '', 
-        description: '', 
-        technologies: '', 
-        status: 'in-progress', 
-        githubUrl: '', 
-        liveUrl: '' 
-    });
-    
-    if (!isOpen) return null;
-    
-    const handleSubmit = (e) => { 
-        e.preventDefault(); 
-        onAddProject({ 
-            ...formData, 
-            technologies: formData.technologies.split(',').map(t => t.trim()) 
-        }); 
-        onClose(); 
-    };
-    
-    return (
-        <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[101] p-4" 
-            onClick={onClose}
-        >
-            <div 
-                className="bg-white rounded-2xl p-6 md:p-8 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" 
-                onClick={(e) => e.stopPropagation()}
+        <h2 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-6">{currentQuestion.questionText}</h2>
+        <div className="space-y-3">
+          {currentQuestion.options.map((option, idx) => (
+            <button 
+              key={idx} 
+              onClick={() => handleOptionSelect(option)} 
+              className="w-full text-left p-4 rounded-lg border-2 border-surface-200 dark:border-neutral-700 hover:border-warning-400 dark:hover:border-warning-500 hover:bg-warning-50 dark:hover:bg-warning-900/10 transition-all"
             >
-                <h2 className="text-xl font-bold text-gray-800 mb-6">Add New Project</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Project Title *</label>
-                        <input 
-                            type="text" 
-                            value={formData.title} 
-                            onChange={e => setFormData({...formData, title: e.target.value})} 
-                            className="w-full bg-gray-100 text-gray-800 rounded-lg p-3 border border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none" 
-                            required 
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Description *</label>
-                        <textarea 
-                            value={formData.description} 
-                            onChange={e => setFormData({...formData, description: e.target.value})} 
-                            className="w-full bg-gray-100 text-gray-800 rounded-lg p-3 border border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none h-24" 
-                            required 
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Technologies (comma-separated) *</label>
-                        <input 
-                            type="text" 
-                            value={formData.technologies} 
-                            onChange={e => setFormData({...formData, technologies: e.target.value})} 
-                            className="w-full bg-gray-100 text-gray-800 rounded-lg p-3 border border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none" 
-                            required 
-                        />
-                    </div>
-                    <div className="flex space-x-3 pt-2">
-                        <button 
-                            type="button" 
-                            onClick={onClose} 
-                            className="flex-1 px-4 py-2 bg-gray-200 rounded-lg text-gray-800 font-semibold hover:bg-gray-300"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            type="submit" 
-                            className="flex-1 px-4 py-2 bg-yellow-400 rounded-lg text-black font-semibold hover:bg-yellow-500"
-                        >
-                            Add Project
-                        </button>
-                    </div>
-                </form>
-            </div>
+              <span className="text-neutral-800 dark:text-neutral-100 font-medium">{option.optionText}</span>
+            </button>
+          ))}
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
-// Main Dashboard Component
+// --- MAIN DASHBOARD COMPONENT ---
 const Dashboard = ({ onLogout, user }) => {
     const [loading, setLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState(null); 
     const [userStatus, setUserStatus] = useState('not-taken');
     const [activeTab, setActiveTab] = useState('dashboard');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [isAddProjectModalOpen, setAddProjectModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [notifications, setNotifications] = useState([
+        { id: 1, title: 'New course available', message: 'React Advanced Patterns is now live!', type: 'info', time: '2 hours ago', read: false },
+        { id: 2, title: 'Goal completed', message: 'You completed your weekly coding challenge!', type: 'success', time: '1 day ago', read: false },
+        { id: 3, title: 'Streak milestone', message: 'Congratulations on your 7-day streak!', type: 'achievement', time: '2 days ago', read: true }
+    ]);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [quickStats, setQuickStats] = useState({
+        todayXP: 150,
+        weeklyGoal: 5,
+        completedToday: 2,
+        upcomingDeadlines: 3
+    });
+
+    console.log('🔍 Dashboard currentUser:', currentUser);
     
+    // Data states
     const [projects, setProjects] = useState([]);
     const [userSkills, setUserSkills] = useState([]);
-    const [streak, setStreak] = useState(12);
-    const [level, setLevel] = useState(2);
-    const [xp, setXp] = useState(125);
+    const [streak, setStreak] = useState(0);
+    const [level, setLevel] = useState(1);
+    const [xp, setXp] = useState(0);
     const [recommendedPaths, setRecommendedPaths] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all');
     const [expandedMilestones, setExpandedMilestones] = useState({});
 
-    useEffect(() => {
-        setLoading(true);
-        setTimeout(() => {
-            setProjects([
-                { 
-                    _id: 'proj1', 
-                    title: 'Personal Portfolio', 
-                    description: 'Built a responsive portfolio to showcase my skills.', 
-                    technologies: ['React', 'Tailwind'], 
-                    status: 'completed', 
-                    githubUrl: '#', 
-                    liveUrl: '#' 
-                }
-            ]);
-            setUserSkills([
-                { name: 'React', level: 75, description: 'UI Library' }, 
-                { name: 'Node.js', level: 50, description: 'Backend Runtime' }
-            ]);
-            setLoading(false);
-        }, 500);
-    }, [user]);
+    // Hooks for modals and forms are now inside the components that need them
+    const [isAddProjectModalOpen, setAddProjectModalOpen] = useState(false);
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [posts, setPosts] = useState([]);
+    const [detailedUser, setDetailedUser] = useState(null);
 
-    const handleQuizComplete = (recommendationsFromBackend) => {
-        const detailedData = recommendationsFromBackend || mockCareerPathDataFromBackend;
-        if (detailedData && detailedData.length > 0) {
-            setRecommendedPaths(detailedData);
+    // Click outside handler for notifications
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            try {
+                if (showNotifications && !event.target.closest('.notifications-container')) {
+                    setShowNotifications(false);
+                }
+            } catch (error) {
+                console.warn('Error in click outside handler:', error);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showNotifications]);
+
+    useEffect(() => {
+    const fetchData = async () => {
+        console.log('🔄 Step 1: fetchData started');
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        if (!token) { 
+            console.log('❌ Step 2: No token found');
+            onLogout(); 
+            return; 
+        }
+        
+        console.log('✅ Step 2: Token exists');
+
+        try {
+            console.log('📡 Step 3: Making API calls...');
+            const [projectsRes, userProfileRes] = await Promise.all([
+                fetch('http://localhost:5000/api/projects', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                }),
+                fetch('http://localhost:5000/api/users/me', { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                })
+            ]);
+
+            console.log('📥 Step 4: Responses received');
+            console.log('  - Projects status:', projectsRes.status);
+            console.log('  - User profile status:', userProfileRes.status);
+
+            // ✅ Only logout if user profile fails (authentication issue)
+            if (!userProfileRes.ok) {
+                console.log('❌ Step 5: User profile request failed');
+                toast.error("Session expired. Please log in again.");
+                onLogout();
+                return;
+            }
+
+            console.log('✅ Step 5: User profile OK');
+
+            // ✅ Parse responses - handle projects 404 gracefully
+            const projectsData = projectsRes.ok 
+                ? await projectsRes.json() 
+                : { projects: [] }; // Empty array if projects endpoint doesn't exist
+                
+            const userProfile = await userProfileRes.json();
+
+            console.log('📦 Step 6: Data parsed');
+            console.log('  - Projects:', projectsData);
+            console.log('  - User Profile:', userProfile);
+
+            console.log('🎯 Step 7: About to call setCurrentUser');
+            setCurrentUser(userProfile);
+            console.log('✅ Step 8: setCurrentUser called');
+
+            setProjects(projectsData.projects || []);
+            setUserSkills(userProfile.skills || []);
+            setStreak(userProfile.streak || 0);
+            setLevel(userProfile.level || 1);
+            setXp(userProfile.xp || 0);
+            
+            if (userProfile.roadmap && userProfile.roadmap.milestones) {
+                setRecommendedPaths([userProfile.roadmap]);
+                setUserStatus('completed');
+            }
+            
+            console.log('✅ Step 9: All state updates complete');
+        } catch (error) {
+            console.error("❌ ERROR in fetchData:", error);
+            toast.error("Failed to load dashboard data");
+        } finally {
+            setLoading(false);
+            console.log('🏁 Step 10: Loading set to false');
+        }
+    };
+    
+    console.log('🚀 useEffect triggered');
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+        fetchData(); 
+    } else {
+        console.log('⚠️ No token, redirecting to login');
+        onLogout();
+    }
+}, [onLogout]); // ✅ Only depend on onLogout, not user
+
+
+     const handleUserUpdate = (updatedUser) => {
+        setCurrentUser(updatedUser);
+        setUserSkills(updatedUser.skills || []);
+        // Update other related states if needed
+    };
+
+    const handleQuizComplete = (recommendations) => {
+        if (recommendations && recommendations.length > 0) {
+            setRecommendedPaths(recommendations);
             setUserStatus('completed');
             setActiveTab('roadmap');
+        } else {
+            toast.error("Could not generate a roadmap from your answers.");
         }
     };
 
-    const handleAddProject = (projectData) => {
-        setProjects(prev => [{ ...projectData, _id: Date.now().toString() }, ...prev]);
+    /* HIGHLIGHT: ADD THIS NEW FUNCTION INSIDE YOUR DASHBOARD COMPONENT */
+
+const handleChoosePath = async (careerPathId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/roadmap/choose', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ careerPathId })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to save the path.");
+        }
+
+        // On success, update the UI to show only the chosen path
+        toast.success("Roadmap saved to your profile!");
+        setRecommendedPaths([data.roadmap]); // The backend returns the newly saved roadmap
+        
+    } catch (error) {
+        toast.error(error.message);
+        console.error("Error choosing path:", error);
+    }
+};
+
+    const handleAddProject = async (projectData) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(projectData)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to add project.');
+            setProjects(data.projects);
+            setAddProjectModalOpen(false); // Close modal on success
+            toast.success("Project added successfully!");
+        } catch (error) {
+            toast.error(error.message);
+        }
     };
 
-    const filteredProjects = useMemo(() => 
-        projects.filter(p => 
-            p.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
-            (filterStatus === 'all' || p.status === filterStatus)
-        ), 
-        [projects, searchQuery, filterStatus]
-    );
+    
 
+    const filteredProjects = useMemo(() => projects.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()) && (filterStatus === 'all' || p.status === filterStatus)),[projects, searchQuery, filterStatus]);
     const handleToggleMilestone = (pathIndex, milestoneIndex) => {
         const key = `${pathIndex}-${milestoneIndex}`;
         setExpandedMilestones(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
+    // Render functions
+    const renderRoadmapView = () => (
+        <EnhancedRoadmap 
+            recommendedPaths={recommendedPaths}
+            expandedMilestones={expandedMilestones}
+            onToggleMilestone={handleToggleMilestone}
+            onChoosePath={handleChoosePath}
+        />
+    );
+
+    const handleDeleteProject = async (projectId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to delete project.');
+            setProjects(data.projects);
+            toast.success("Project deleted successfully!");
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+
+    const renderProjectsView = () => (
+        <EnhancedProjects 
+            projects={projects}
+            onAddProject={() => setAddProjectModalOpen(true)}
+            onDeleteProject={handleDeleteProject}
+        />
+    );
+
+    const renderDashboardView = () => (
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            {/* Premium Welcome Header */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 rounded-3xl p-8 lg:p-10 text-white shadow-2xl">
+                {/* Background Elements */}
+                <div className="absolute inset-0 bg-black/10"></div>
+                <div className="absolute -top-4 -right-4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-4 -left-4 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
+                
+                <div className="relative z-10">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                        <div className="flex-1">
+                            <h1 className="text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+                                Welcome back, {currentUser?.name || 'User'}! 
+                                <span className="inline-block ml-2 animate-bounce">👋</span>
+                            </h1>
+                            <p className="text-xl text-primary-100 mb-6 leading-relaxed">
+                                {streak > 0 
+                                    ? `Amazing! You're on a ${streak}-day learning streak! Keep it up! 🔥` 
+                                    : "Ready to start your learning journey today? Let's make it count! 🚀"
+                                }
+                            </p>
+                            
+                            {/* Quick Stats Row */}
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="bg-white/15 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+                                    <div className="text-2xl font-bold">{xp.toLocaleString()}</div>
+                                    <div className="text-sm text-primary-100">Total XP</div>
+                                </div>
+                                <div className="bg-white/15 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+                                    <div className="text-2xl font-bold">{projects.length}</div>
+                                    <div className="text-sm text-primary-100">Projects</div>
+                                </div>
+                                <div className="bg-white/15 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+                                    <div className="text-2xl font-bold">{userSkills.length}</div>
+                                    <div className="text-sm text-primary-100">Skills</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex-shrink-0">
+                            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/30">
+                                <div className="text-3xl font-bold mb-2">Level {level}</div>
+                                <div className="text-sm text-primary-100 mb-3">Current Level</div>
+                                <div className="w-full bg-white/20 rounded-full h-2 mb-2">
+                                    <div 
+                                        className="bg-white h-2 rounded-full transition-all duration-1000"
+                                        style={{ width: `${Math.min((xp / (level * 1000)) * 100, 100)}%` }}
+                                    />
+                                </div>
+                                <div className="text-xs text-primary-100">
+                                    {Math.round((xp / (level * 1000)) * 100)}% to Level {level + 1}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Premium Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                    {
+                        title: "Learning Streak",
+                        value: streak,
+                        change: "+2 from yesterday",
+                        icon: Flame,
+                        bgGradient: "from-orange-500/10 to-red-500/10",
+                        borderColor: "border-orange-200/50 dark:border-orange-800/50",
+                        iconBg: "from-orange-500 to-red-500",
+                        accentColor: "text-orange-600 dark:text-orange-400"
+                    },
+                    {
+                        title: "Active Projects",
+                        value: projects.length,
+                        change: `${projects.length > 0 ? '+1 this week' : 'Start your first'}`,
+                        icon: FolderKanban,
+                        bgGradient: "from-blue-500/10 to-indigo-500/10",
+                        borderColor: "border-blue-200/50 dark:border-blue-800/50",
+                        iconBg: "from-blue-500 to-indigo-500",
+                        accentColor: "text-blue-600 dark:text-blue-400"
+                    },
+                    {
+                        title: "Skills Mastered",
+                        value: userSkills.length,
+                        change: `${userSkills.length > 0 ? 'Keep growing!' : 'Add your first'}`,
+                        icon: Target,
+                        bgGradient: "from-purple-500/10 to-pink-500/10",
+                        borderColor: "border-purple-200/50 dark:border-purple-800/50",
+                        iconBg: "from-purple-500 to-pink-500",
+                        accentColor: "text-purple-600 dark:text-purple-400"
+                    },
+                    {
+                        title: "Experience Level",
+                        value: `Level ${level}`,
+                        change: `${xp.toLocaleString()} XP earned`,
+                        icon: Award,
+                        bgGradient: "from-emerald-500/10 to-teal-500/10",
+                        borderColor: "border-emerald-200/50 dark:border-emerald-800/50",
+                        iconBg: "from-emerald-500 to-teal-500",
+                        accentColor: "text-emerald-600 dark:text-emerald-400"
+                    }
+                ].map((card, index) => (
+                    <div
+                        key={card.title}
+                        className={`group relative bg-white dark:bg-neutral-900 ${card.bgGradient} backdrop-blur-sm p-6 rounded-2xl border ${card.borderColor} shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer overflow-hidden`}
+                    >
+                        {/* Hover Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className={`p-3 bg-gradient-to-br ${card.iconBg} rounded-xl shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
+                                    <card.icon size={24} className="text-white" />
+                                </div>
+                                <div className={`px-3 py-1 bg-surface-100 dark:bg-neutral-800 rounded-full text-xs font-medium ${card.accentColor}`}>
+                                    {card.change}
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 group-hover:scale-105 transition-transform duration-300">
+                                    {card.value}
+                                </div>
+                                <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                                    {card.title}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Enhanced Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                {/* Left Column - Recent Activity & Progress */}
+                <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+                    {/* Enhanced Progress Overview */}
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-xl border border-surface-200 dark:border-neutral-800 hover:shadow-2xl transition-all duration-300">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
+                                    <TrendingUp size={24} className="text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                                        Your Progress
+                                    </h3>
+                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        Track your learning journey
+                                    </p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setActiveTab('analytics')}
+                                className="px-4 py-2 bg-gradient-to-r from-primary-500 to-accent-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 text-sm font-medium"
+                            >
+                                View Details
+                            </button>
+                        </div>
+                        <div className="space-y-6">
+                            {/* Enhanced XP Progress Bar */}
+                            <div className="bg-gradient-to-r from-surface-50 to-surface-100 dark:from-neutral-800 dark:to-neutral-700 rounded-xl p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Level {level} Progress</span>
+                                    <div className="text-right">
+                                        <span className="text-lg font-bold text-primary-600 dark:text-primary-400">{xp.toLocaleString()}</span>
+                                        <span className="text-sm text-neutral-500"> / {(level * 1000).toLocaleString()} XP</span>
+                                    </div>
+                                </div>
+                                <div className="relative w-full bg-surface-200 dark:bg-neutral-700 rounded-full h-4 overflow-hidden">
+                                    <div 
+                                        className="bg-gradient-to-r from-primary-500 via-primary-600 to-accent-600 h-4 rounded-full transition-all duration-1000 shadow-inner relative overflow-hidden"
+                                        style={{ width: `${Math.min((xp / (level * 1000)) * 100, 100)}%` }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                                    </div>
+                                    <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/10"></div>
+                                </div>
+                                <div className="flex justify-between text-xs text-neutral-500 mt-2">
+                                    <span>Level {level}</span>
+                                    <span>{Math.round((xp / (level * 1000)) * 100)}% Complete</span>
+                                    <span>Level {level + 1}</span>
+                                </div>
+                            </div>
+
+                            {/* Enhanced Quick Actions */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => setActiveTab('projects')}
+                                    className="group relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 p-6 rounded-xl text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                                >
+                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
+                                    <div className="relative z-10 flex items-center justify-center gap-3">
+                                        <PlusCircle size={24} className="group-hover:scale-110 transition-transform duration-300" />
+                                        <span className="font-semibold text-lg">Add Project</span>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('skills')}
+                                    className="group relative overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 p-6 rounded-xl text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                                >
+                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
+                                    <div className="relative z-10 flex items-center justify-center gap-3">
+                                        <Target size={24} className="group-hover:scale-110 transition-transform duration-300" />
+                                        <span className="font-semibold text-lg">Learn Skill</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column - Premium Widgets */}
+                <div className="space-y-8">
+                    {/* Today's Focus */}
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-xl border border-surface-200 dark:border-neutral-800 hover:shadow-2xl transition-all duration-300">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gradient-to-br from-primary-500 to-accent-600 rounded-lg shadow-lg">
+                                    <Calendar size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                                        Today's Focus
+                                    </h3>
+                                    <p className="text-xs text-neutral-500">
+                                        {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-xs font-medium">
+                                3 tasks
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            {[
+                                { task: 'Complete React Challenge', progress: 75, color: 'bg-blue-500', time: '30 min left' },
+                                { task: 'Review System Design', progress: 40, color: 'bg-green-500', time: '1 hour' },
+                                { task: 'Practice Algorithms', progress: 90, color: 'bg-purple-500', time: '15 min left' }
+                            ].map((item, index) => (
+                                <div key={index} className="p-3 bg-surface-50 dark:bg-neutral-800 rounded-lg hover:bg-surface-100 dark:hover:bg-neutral-700 transition-colors">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{item.task}</span>
+                                        <span className="text-xs text-neutral-500 bg-surface-200 dark:bg-neutral-700 px-2 py-1 rounded-full">{item.time}</span>
+                                    </div>
+                                    <div className="w-full bg-surface-200 dark:bg-neutral-700 rounded-full h-2">
+                                        <div 
+                                            className={`${item.color} h-2 rounded-full transition-all duration-500`}
+                                            style={{ width: `${item.progress}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2">
+                                        <span className="text-xs text-neutral-500">{item.progress}% Complete</span>
+                                        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Level 1</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <button 
+                            onClick={() => setActiveTab('goalTracker')}
+                            className="w-full mt-4 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                        >
+                            View All Goals
+                        </button>
+                    </div>
+
+                    {/* Premium Quick Actions */}
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-xl border border-surface-200 dark:border-neutral-800 hover:shadow-2xl transition-all duration-300">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gradient-to-br from-warning-500 to-orange-500 rounded-lg shadow-lg">
+                                    <Zap size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                                        Quick Actions
+                                    </h3>
+                                    <p className="text-xs text-neutral-500">
+                                        Take action on your goals
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            {[
+                                { label: 'New Goal', icon: Target, action: () => setActiveTab('goalTracker'), color: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/25' },
+                                { label: 'Practice', icon: Code, action: () => setActiveTab('codingChallenges'), color: 'from-blue-500 to-indigo-600', shadow: 'shadow-blue-500/25' },
+                                { label: 'Learn', icon: BookOpen, action: () => setActiveTab('freeCourses'), color: 'from-purple-500 to-pink-600', shadow: 'shadow-purple-500/25' },
+                                { label: 'Connect', icon: Users, action: () => setActiveTab('mentorship'), color: 'from-orange-500 to-red-600', shadow: 'shadow-orange-500/25' }
+                            ].map((action, index) => (
+                                <button
+                                    key={index}
+                                    onClick={action.action}
+                                    className={`group relative p-4 bg-gradient-to-br ${action.color} text-white rounded-xl hover:scale-105 transition-all duration-300 flex flex-col items-center justify-center gap-3 shadow-lg hover:shadow-xl ${action.shadow} min-h-[90px] overflow-hidden`}
+                                >
+                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
+                                    <action.icon size={24} className="relative z-10 group-hover:scale-110 transition-transform duration-300" />
+                                    <span className="relative z-10 text-sm font-semibold">{action.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Premium Skills Overview */}
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-xl border border-surface-200 dark:border-neutral-800 hover:shadow-2xl transition-all duration-300">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-lg shadow-lg">
+                                    <Star size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                                        Top Skills
+                                    </h3>
+                                    <p className="text-xs text-neutral-500">
+                                        Your expertise areas
+                                    </p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setActiveTab('skills')}
+                                className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-xs font-medium"
+                            >
+                                Manage
+                            </button>
+                        </div>
+                        <div className="space-y-3">
+                            {userSkills.length > 0 ? userSkills.slice(0, 4).map((skill, i) => (
+                                <div key={i} className="flex items-center justify-between p-3 bg-surface-50 dark:bg-neutral-800 rounded-lg hover:bg-surface-100 dark:hover:bg-neutral-700 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-600 rounded-full flex items-center justify-center">
+                                            <Code size={18} className="text-white" />
+                                        </div>
+                                        <span className="font-medium text-neutral-900 dark:text-neutral-100">{skill.name || `Skill ${i + 1}`}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm font-bold text-primary-600 dark:text-primary-400">
+                                            {skill.level || 'Beginner'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between p-3 bg-surface-50 dark:bg-neutral-800 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-600 rounded-full flex items-center justify-center">
+                                                <Code size={18} className="text-white" />
+                                            </div>
+                                            <span className="font-medium text-neutral-900 dark:text-neutral-100">Skill 1</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-bold text-primary-600 dark:text-primary-400">
+                                                Beginner
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Premium Deadlines Tracker */}
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-xl border border-surface-200 dark:border-neutral-800 hover:shadow-2xl transition-all duration-300">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg shadow-lg">
+                                    <Clock size={20} className="text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                                        Upcoming Deadlines
+                                    </h3>
+                                    <p className="text-xs text-neutral-500">
+                                        Stay on track with your goals
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
+                                3 pending
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            {[
+                                { title: 'Submit Portfolio', date: 'Tomorrow', urgent: true },
+                                { title: 'Complete Course', date: 'In 3 days', urgent: false },
+                                { title: 'Interview Prep', date: 'Next week', urgent: false }
+                            ].map((deadline, index) => (
+                                <div key={index} className={`p-4 rounded-lg border-l-4 hover:bg-opacity-80 transition-colors ${
+                                    deadline.urgent 
+                                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                                        : 'border-warning-500 bg-warning-50 dark:bg-warning-900/20'
+                                }`}>
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-medium text-neutral-900 dark:text-neutral-100">{deadline.title}</span>
+                                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                                            deadline.urgent 
+                                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' 
+                                                : 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300'
+                                        }`}>
+                                            {deadline.date}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     // Sidebar
     const renderSidebar = () => {
-        const NavButton = ({ tabName, icon, label }) => (
+        const NavButton = ({ tabName, icon, label, badge, badgeColor = 'bg-primary-500' }) => (
             <li>
-                <button 
-                    onClick={() => {setActiveTab(tabName); setMobileMenuOpen(false);}} 
-                    className={`w-full flex items-center space-x-3 p-3 rounded-lg font-medium transition-colors ${
+                <button
+                    onClick={() => {
+                        setActiveTab(tabName);
+                        setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl font-medium transition-all duration-300 group ${
                         activeTab === tabName 
-                            ? 'bg-amber-100 text-amber-700' 
-                            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                            ? 'bg-gradient-to-r from-primary-500 to-accent-600 text-white shadow-lg shadow-primary-500/20 scale-[1.02]' 
+                            : 'text-neutral-600 dark:text-neutral-400 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 dark:hover:from-primary-900/20 dark:hover:to-accent-900/20 hover:text-primary-600 dark:hover:text-primary-400 hover:scale-[1.02] hover:shadow-md'
                     }`}
                 >
-                    {icon}<span>{label}</span>
+                    <div className="flex items-center space-x-3">
+                        <div className={`p-1 rounded-lg transition-all duration-300 ${
+                            activeTab === tabName 
+                                ? 'bg-white/20' 
+                                : 'group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30'
+                        }`}>
+                            {icon}
+                        </div>
+                        <span className="font-medium">{label}</span>
+                    </div>
+                    {badge && (
+                        <span className={`px-2 py-0.5 text-xs rounded-full font-medium text-white ${badgeColor} ${
+                            activeTab === tabName ? 'bg-white/20' : ''
+                        }`}>
+                            {badge}
+                        </span>
+                    )}
                 </button>
             </li>
         );
 
         return (
             <div 
-                className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 w-64 p-6 z-40 transform transition-transform ${
+                className={`fixed top-0 left-0 h-full bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-surface-200/50 dark:border-neutral-800/50 w-64 z-40 transform transition-all duration-300 shadow-xl ${
                     mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
                 }`}
             >
-                <div className="flex flex-col h-full">
-                    <div 
-                        className="flex items-center space-x-2 mb-10 cursor-pointer" 
-                        onClick={() => setActiveTab('dashboard')}
-                    >
-                        <span className="w-8 h-8 bg-yellow-400 rounded-md flex items-center justify-center font-bold text-white text-lg">🧭</span>
-                        <span className="font-bold text-lg text-gray-800">Career Compass</span>
-                    </div>
-                    <nav className="flex-1 overflow-y-auto -mr-4 pr-4">
-                        <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
-                        <ul className="space-y-2">
-                            <NavButton tabName="dashboard" icon={<BarChart3 size={20} />} label="Dashboard" />
-                            {recommendedPaths.length > 0 && <NavButton tabName="roadmap" icon={<Rocket size={20} />} label="My Roadmap" />}
-                            <NavButton tabName="projects" icon={<FolderKanban size={20} />} label="My Projects" />
-                            <NavButton tabName="skills" icon={<Target size={20} />} label="My Skills" />
-                            <NavButton tabName="profile" icon={<UserIcon size={20} />} label="My Profile" />
-                        </ul>
-                        <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Discover</p>
-                        <ul className="space-y-2">
-                            <li>
-                                <a 
-                                    href="https://discord.gg/q7RjKEss" 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="w-full flex items-center space-x-3 p-3 rounded-lg font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
-                                >
-                                    <Users size={20} />
-                                    <span>Join Community</span>
-                                </a>
-                            </li>
-                            <NavButton tabName="freeCourses" icon={<BookOpen size={20} />} label="Free Courses" />
-                            <NavButton tabName="mentorship" icon={<Users size={20} />} label="1:1 Mentorship" />
-                            <NavButton tabName="placement" icon={<Briefcase size={20} />} label="Placement" />
-                            <NavButton tabName="podcast" icon={<Mic size={20} />} label="Podcast" />
-                        </ul>
-                    </nav>
-                    <div className="mt-4 border-t pt-4 border-gray-200">
-                        <button 
-                            onClick={onLogout} 
-                            className="w-full flex items-center space-x-3 p-3 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                            <LogOut size={20} /><span>Logout</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    const renderRoadmapView = () => (
-        <div className="opacity-100">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Your Recommended Roadmap</h1>
-            <p className="text-gray-500 mb-8">Follow these milestones and tasks to achieve your career goals.</p>
-            <div className="space-y-8">
-                {recommendedPaths.map((path, pathIndex) => (
-                    <div key={pathIndex} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <div className="flex items-start mb-4">
-                            <div className="p-3 rounded-lg bg-amber-100 mr-4">
-                                <Rocket className="text-amber-600" size={24}/>
-                            </div>
-                            <div>
-                                <h2 className="font-bold text-xl text-gray-800">{path.name}</h2>
-                                <p className="text-sm text-gray-600">{path.description}</p>
-                            </div>
-                        </div>
-                        <div className="space-y-2 border-t border-gray-200 pt-4">
-                            {path.milestones.map((milestone, milestoneIndex) => {
-                                const key = `${pathIndex}-${milestoneIndex}`;
-                                const isExpanded = !!expandedMilestones[key];
-                                return (
-                                    <div key={milestoneIndex} className="border-b border-gray-100 last:border-b-0">
-                                        <button 
-                                            onClick={() => handleToggleMilestone(pathIndex, milestoneIndex)} 
-                                            className="w-full flex justify-between items-center text-left p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                                        >
-                                            <span className="font-semibold text-gray-700">{milestone.title}</span>
-                                            <ChevronDown 
-                                                size={20} 
-                                                className={`text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                                            />
-                                        </button>
-                                        {isExpanded && (
-                                            <div className="overflow-hidden pl-6 pr-3 pb-3">
-                                                <ul className="mt-2 space-y-3">
-                                                    {milestone.tasks.map((task, taskIndex) => (
-                                                        <li 
-                                                            key={taskIndex} 
-                                                            className={`flex items-center space-x-3 ${
-                                                                task.completed ? 'text-gray-500' : 'text-gray-800'
-                                                            }`}
-                                                        >
-                                                            {task.completed ? (
-                                                                <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
-                                                            ) : (
-                                                                <Circle size={18} className="text-gray-300 flex-shrink-0" />
-                                                            )}
-                                                            <span className={task.completed ? 'line-through' : ''}>
-                                                                {task.name}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    const renderDashboardView = () => (
-        <div className="opacity-100">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 flex items-center space-x-4">
-                        <div className="p-3 bg-amber-100 rounded-full">
-                            <Flame size={24} className="text-amber-600" />
-                        </div>
-                        <div>
-                            <p className="text-gray-800 font-bold text-xl">{streak} Day Streak</p>
-                            <p className="text-gray-500 text-sm">Keep up the great work!</p>
-                        </div>
-                    </div>
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                            <TrendingUp className="mr-3 text-amber-500" />Quick Stats
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center p-4 bg-gray-50 rounded-lg">
-                                <p className="text-3xl font-bold text-amber-600">{projects.length}</p>
-                                <p className="text-gray-500 text-sm">Projects</p>
-                            </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-lg">
-                                <p className="text-3xl font-bold text-amber-600">{userSkills.length}</p>
-                                <p className="text-gray-500 text-sm">Skills</p>
-                            </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-lg">
-                                <p className="text-3xl font-bold text-green-500">{level}</p>
-                                <p className="text-gray-500 text-sm">Level</p>
-                            </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-lg">
-                                <p className="text-3xl font-bold text-yellow-500">{xp}</p>
-                                <p className="text-gray-500 text-sm">Total XP</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="space-y-6">
-                    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="text-lg font-bold text-gray-800 mb-3">Top Skills</h3>
-                        <div className="space-y-3">
-                            {userSkills.slice(0, 5).map((skill, i) => (
-                                <div key={i}>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-gray-800 font-medium">{skill.name}</span>
-                                        <span className="text-amber-600 font-bold">{skill.level}%</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                        <div 
-                                            className="bg-amber-500 h-2 rounded-full transition-all duration-500"
-                                            style={{ width: `${skill.level}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                            {userSkills.length === 0 && (
-                                <p className="text-gray-500 text-sm">Complete tasks to develop skills!</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    const renderProjectsView = () => (
-        <div className="opacity-100">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">My Projects</h1>
-                    <p className="text-gray-500">Showcase your work and track progress</p>
-                </div>
-                <button 
-                    onClick={() => setAddProjectModalOpen(true)} 
-                    className="flex items-center space-x-2 px-4 py-2 bg-yellow-400 text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors"
+            <div className="flex flex-col h-full p-6">
+                <div 
+                    className="flex items-center space-x-3 mb-8 cursor-pointer group" 
+                    onClick={() => setActiveTab('dashboard')}
                 >
-                    <PlusCircle size={18} />
-                    <span>Add Project</span>
-                </button>
-            </div>
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className="flex-1 relative">
-                    <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
-                        type="text" 
-                        placeholder="Search projects..." 
-                        value={searchQuery} 
-                        onChange={(e) => setSearchQuery(e.target.value)} 
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none" 
-                    />
-                </div>
-            </div>
-            {filteredProjects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProjects.map((project) => (
-                        <div 
-                            key={project._id} 
-                            className="bg-white p-5 rounded-xl border border-gray-200 hover:border-amber-400 hover:shadow-lg transition-all group"
-                        >
-                            <div className="flex justify-between items-start mb-3">
-                                <h3 className="font-bold text-gray-800 text-lg group-hover:text-amber-600 transition-colors">
-                                    {project.title}
-                                </h3>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.description}</p>
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                {project.technologies?.map((tech, idx) => (
-                                    <span key={idx} className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-700">
-                                        {tech}
-                                    </span>
-                                ))}
-                            </div>
-                            <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                                <span className="text-xs px-3 py-1 rounded-full font-medium capitalize bg-green-100 text-green-700">
-                                    {project.status}
-                                </span>
-                                <div className="flex space-x-2">
-                                    {project.githubUrl && (
-                                        <a 
-                                            href={project.githubUrl} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="text-gray-500 hover:text-gray-800"
-                                        >
-                                            <Code size={18} />
-                                        </a>
-                                    )}
-                                    {project.liveUrl && (
-                                        <a 
-                                            href={project.liveUrl} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="text-gray-500 hover:text-amber-600"
-                                        >
-                                            <ExternalLink size={18} />
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
-                    <FolderKanban size={48} className="mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-500 mb-4">You haven't added any projects yet</p>
-                    <button 
-                        onClick={() => setAddProjectModalOpen(true)} 
-                        className="px-6 py-2 bg-yellow-400 text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors"
-                    >
-                        Add Your First Project
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-
-    const renderSkillsView = () => (
-        <div className="opacity-100">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">My Skills</h1>
-            <p className="text-gray-500 mb-8">Track your skill development and progress</p>
-            {userSkills.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {userSkills.map((skill, i) => (
-                        <div key={i} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-gray-800 font-bold text-lg">{skill.name}</h3>
-                                <span className="text-amber-600 font-bold text-xl">{skill.level}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
-                                <div 
-                                    className="bg-amber-500 h-3 rounded-full transition-all duration-500"
-                                    style={{ width: `${skill.level}%` }}
-                                />
-                            </div>
-                            <p className="text-gray-600 text-sm">{skill.description || 'Keep practicing to improve!'}</p>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
-                    <Target size={48} className="mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-500">Complete tasks in your roadmap to develop skills!</p>
-                </div>
-            )}
-        </div>
-    );
-
-    const renderProfileView = () => (
-        <div className="opacity-100">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Your Profile</h1>
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <div className="flex items-center space-x-4 mb-6">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 flex items-center justify-center text-white font-bold text-3xl">
-                        {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                        <Compass size={20} className="text-white" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-800">{user?.username || 'User'}</h2>
-                        <p className="text-gray-500">{user?.email || 'user@email.com'}</p>
+                        <span className="font-bold text-xl bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">Career Compass</span>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">Your Learning Journey</div>
                     </div>
+                </div>
+
+                {/* User Profile Section */}
+                {currentUser && (
+                    <div className="bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20 rounded-xl p-4 mb-6 border border-primary-100 dark:border-primary-800/30">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-600 rounded-full flex items-center justify-center text-white font-bold">
+                                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div className="flex-1">
+                                <div className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                                    {currentUser.name || 'User'}
+                                </div>
+                                <div className="text-xs text-primary-600 dark:text-primary-400">
+                                    Level {level} • {streak} day streak
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <div className="flex justify-between text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                                <span>Progress</span>
+                                <span>{Math.round((xp % 1000) / 10)}%</span>
+                            </div>
+                            <div className="w-full bg-white dark:bg-neutral-800 rounded-full h-2">
+                                <div 
+                                    className="bg-gradient-to-r from-primary-500 to-accent-600 h-2 rounded-full transition-all duration-1000"
+                                    style={{ width: `${(xp % 1000) / 10}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <nav className="flex-1 overflow-y-auto -mr-4 pr-4">
+                    <p className="px-3 text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2">Menu</p>
+                    <ul className="space-y-2">
+                        <NavButton tabName="dashboard" icon={<BarChart3 size={20} />} label="Dashboard" />
+                        {recommendedPaths.length > 0 && <NavButton tabName="roadmap" icon={<Rocket size={20} />} label="My Roadmap" />}
+                        <NavButton tabName="projects" icon={<FolderKanban size={20} />} label="My Projects" />
+                        <NavButton tabName="skills" icon={<Target size={20} />} label="My Skills" />
+                        <NavButton tabName="createPost" icon={<PlusCircle size={20} />} label=" Post" />
+                        
+                        
+                    </ul>
+                    <p className="px-3 text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mt-6 mb-2">Career Tools</p>
+                    <ul className="space-y-2">
+                        {/* Add back navigation items one by one */}
+                        <NavButton tabName="interviewPrep" icon={<MessageCircle size={20} />} label="Interview Prep" />
+                        <NavButton tabName="resumeBuilder" icon={<FileText size={20} />} label="Resume Builder" />
+                        <NavButton tabName="codingChallenges" icon={<Code size={20} />} label="Coding Challenges" />
+                        <NavButton tabName="goalTracker" icon={<Target size={20} />} label="Goal Tracker" />
+                        <NavButton tabName="analytics" icon={<BarChart3 size={20} />} label="Analytics" />
+                    </ul>
+                    <p className="px-3 text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mt-6 mb-2">Discover</p>
+                    <ul className="space-y-2">
+
+                        <NavButton tabName="freeCourses" icon={<BookOpen size={20} />} label="Free Courses" />
+                        <NavButton tabName="mentorship" icon={<Users size={20} />} label="1:1 Mentorship" />
+                        <NavButton tabName="placement" icon={<Briefcase size={20} />} label="Placement" />
+                        <NavButton tabName="podcast" icon={<Mic size={20} />} label="Podcast" />
+                        <NavButton tabName="report" icon={<BarChart3 size={20} />} label="Report Card" />
+                        <NavButton tabName="profile" icon={<UserIcon size={20} />} label="My Profile" />
+                    </ul>
+                </nav>
+                <div className="mt-4 border-t pt-4 border-surface-200 dark:border-neutral-800">
+                    <button 
+                        onClick={onLogout} 
+                        className="w-full flex items-center space-x-3 p-3 text-neutral-500 dark:text-neutral-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-lg transition-colors"
+                    >
+                        <LogOut size={20} /><span>Logout</span>
+                    </button>
                 </div>
             </div>
         </div>
     );
-
-    const renderFreeCoursesView = () => {
-        const courses = [
-            { title: "JavaScript for Beginners", desc: "A comprehensive introduction to the most popular language on the web.", tags: ["JavaScript", "Beginner"] },
-            { title: "React Fundamentals", desc: "Learn the basics of React to build modern, interactive user interfaces.", tags: ["React", "Frontend"] },
-            { title: "Node.js Express API", desc: "Create robust and scalable backend APIs with Node.js and Express.", tags: ["Node.js", "Backend", "API"] }
-        ];
-        return (
-            <div className="opacity-100">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Free Courses</h1>
-                <p className="text-gray-500 mb-8">Kickstart your learning journey with our curated list of free courses.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {courses.map((course, i) => (
-                        <div key={i} className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow flex flex-col">
-                            <h3 className="font-bold text-lg text-gray-800 mb-2">{course.title}</h3>
-                            <p className="text-gray-600 text-sm mb-4 flex-grow">{course.desc}</p>
-                            <div className="flex items-center justify-between">
-                                <div className="flex gap-2">
-                                    {course.tags.map(t => (
-                                        <span key={t} className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                                            {t}
-                                        </span>
-                                    ))}
-                                </div>
-                                <button className="text-sm font-semibold text-amber-600 hover:text-amber-800">Start &rarr;</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    };
-
-    const renderMentorshipView = () => {
-        const mentors = [
-            { name: "John Doe", title: "Senior Software Engineer @ Google", expertise: ["System Design", "Algorithms"] },
-            { name: "Jane Smith", title: "Frontend Lead @ Vercel", expertise: ["React", "Next.js", "UI/UX"] },
-            { name: "Sam Wilson", title: "DevOps Specialist @ AWS", expertise: ["Cloud", "CI/CD", "Docker"] }
-        ];
-        return (
-            <div className="opacity-100">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">1:1 Mentorship</h1>
-                <p className="text-gray-500 mb-8">Get personalized guidance from industry experts.</p>
-                <div className="space-y-4">
-                    {mentors.map((mentor, i) => (
-                        <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                                <div>
-                                    <p className="font-bold text-gray-800">{mentor.name}</p>
-                                    <p className="text-sm text-gray-500">{mentor.title}</p>
-                                    <div className="flex gap-2 mt-1">
-                                        {mentor.expertise.map(e => (
-                                            <span key={e} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                                                {e}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            <button className="px-4 py-2 bg-yellow-400 text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors text-sm">
-                                Book Session
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    };
-
-    const renderPlacementView = () => {
-        const jobs = [
-            { title: "Frontend Developer", company: "Stripe", location: "Remote", type: "Full-time" },
-            { title: "Backend Engineer", company: "Shopify", location: "Coimbatore, IN", type: "Full-time" },
-            { title: "Web Dev Intern", company: "Local Startup", location: "Coimbatore, IN", type: "Internship" }
-        ];
-        return (
-            <div className="opacity-100">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Placement Assistance</h1>
-                <p className="text-gray-500 mb-8">Find your dream job with our curated list of opportunities.</p>
-                <div className="space-y-4">
-                    {jobs.map((job, i) => (
-                        <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 flex items-center justify-between">
-                            <div>
-                                <p className="font-bold text-gray-800">{job.title}</p>
-                                <p className="text-sm text-gray-500">
-                                    {job.company} &middot; <span className="text-amber-700 font-medium">{job.location}</span>
-                                </p>
-                            </div>
-                            <div className="flex items-center space-x-4">
-                                <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
-                                    {job.type}
-                                </span>
-                                <button className="text-sm font-semibold text-amber-600 hover:text-amber-800">
-                                    Apply &rarr;
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    };
-
-    const renderPodcastView = () => {
-        const episodes = [
-            { title: "Ep #1: Landing Your First Tech Job", desc: "Tips and tricks from a hiring manager." },
-            { title: "Ep #2: The Rise of AI in Development", desc: "How AI is changing the way we code." }
-        ];
-        return (
-            <div className="opacity-100">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Podcast</h1>
-                <p className="text-gray-500 mb-8">Listen to insights from experts and learn from their journey in tech.</p>
-                <div className="bg-white p-6 rounded-xl border border-gray-200 space-y-4">
-                    {episodes.map((ep, i) => (
-                        <div key={i} className="p-4 border-b last:border-b-0 border-gray-100">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="font-bold text-gray-800">{ep.title}</p>
-                                    <p className="text-sm text-gray-500">{ep.desc}</p>
-                                </div>
-                                <button className="p-2 rounded-full hover:bg-amber-100 text-amber-600">
-                                    <PlayCircle size={28} />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    };
+};
 
     const renderContent = () => {
-        const tabs = {
-            dashboard: renderDashboardView(),
-            projects: renderProjectsView(),
-            skills: renderSkillsView(),
-            profile: renderProfileView(),
-            roadmap: renderRoadmapView(),
-            freeCourses: renderFreeCoursesView(),
-            mentorship: renderMentorshipView(),
-            placement: renderPlacementView(),
-            podcast: renderPodcastView(),
-        };
-        return tabs[activeTab] || renderDashboardView();
+    // ✅ CRITICAL FIX: Wait for data before rendering
+    if (loading || !currentUser) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
+                    <p className="text-neutral-500 dark:text-neutral-400 text-lg font-medium">Loading your profile...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const tabs = {
+        dashboard: renderDashboardView(),
+        projects: renderProjectsView(),
+        skills: <SkillsManager 
+                    user={currentUser} 
+                    onUpdate={handleUserUpdate}  
+                />,
+        profile: <UserProfile 
+                    user={currentUser}
+                    onUpdate={handleUserUpdate}
+                />,
+        roadmap: renderRoadmapView(),
+        freeCourses: <FreeCourses />,
+        mentorship: <Mentorship user={currentUser} />,
+        placement: <Placement user={currentUser} />,
+        podcast: <Podcast />,
+        report: (
+            <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 md:p-6">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-7xl mx-auto"
+                >
+                    <ReportCard 
+                        user={currentUser} 
+                        onUpdate={handleUserUpdate} 
+                        onNavigate={(tab) => setActiveTab(tab)}
+                    />
+                </motion.div>
+            </div>
+        ),
+        createPost: <CreatePost user={currentUser} onPostCreated={() => setActiveTab('blog')} />,
+        // Add back components one by one
+        interviewPrep: <InterviewPrep />,
+        resumeBuilder: <ResumeBuilder />,
+        codingChallenges: <CodingChallenges />,
+        goalTracker: <GoalTracker />,
+        analytics: (
+            <ErrorBoundary>
+                <SimpleAnalyticsBasic />
+            </ErrorBoundary>
+        )
+           
+        
     };
     
+    return tabs[activeTab] || renderDashboardView();
+};
+
+
+    
     return (
-        <div className="min-h-screen bg-gray-100 text-gray-800">
+        <div className="min-h-screen bg-gradient-to-br from-surface-50 via-surface-100 to-primary-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-800 text-neutral-800 dark:text-neutral-100 transition-all duration-500">
+
             {renderSidebar()}
             <div className="relative md:pl-64">
-                <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg border-b border-gray-200 p-4 flex items-center justify-between md:hidden">
-                    <button 
-                        className="text-gray-600" 
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    >
-                        <Menu size={24} />
-                    </button>
-                </header>
-                <main className="p-6 md:p-10">
-                    {userStatus === 'completed' ? (
-                        renderContent()
-                    ) : userStatus === 'quiz' ? (
-                        <Quiz onQuizComplete={handleQuizComplete} />
-                    ) : (
-                        <div className="text-center p-12 bg-white rounded-lg shadow-sm">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-4">Welcome to Underrated Coder!</h2>
-                            <p className="text-gray-600 mb-6">Take our career discovery quiz to unlock your personalized dashboard.</p>
+                {/* Enhanced Header */}
+                <header className="sticky top-0 z-20 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-surface-200/50 dark:border-neutral-800/50 shadow-sm">
+                    <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-4">
                             <button 
-                                onClick={() => setUserStatus('quiz')} 
-                                className="px-6 py-3 bg-yellow-400 text-black font-semibold rounded-lg hover:bg-yellow-500 transition-colors"
+                                className="md:hidden p-2 text-neutral-600 dark:text-neutral-300 hover:bg-surface-100 dark:hover:bg-neutral-800 rounded-lg transition-colors" 
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             >
-                                Start Quiz
+                                <Menu size={20} />
+                            </button>
+                            
+                            {/* Search Bar */}
+                            <div className="hidden md:flex items-center gap-2 bg-surface-50 dark:bg-neutral-800 rounded-xl px-4 py-2 min-w-80">
+                                <Search size={18} className="text-neutral-500" />
+                                <input
+                                    type="text"
+                                    placeholder="Search features, goals, or content..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="bg-transparent border-none outline-none flex-1 text-sm placeholder-neutral-500"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="p-1 hover:bg-surface-200 dark:hover:bg-neutral-700 rounded"
+                                    >
+                                        <X size={14} className="text-neutral-400" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            {/* Quick Stats */}
+                            <div className="hidden lg:flex items-center gap-3 text-sm">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                                    <Zap size={16} className="text-primary-600" />
+                                    <span className="font-medium text-primary-700 dark:text-primary-300">+{quickStats.todayXP} XP today</span>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-success-50 dark:bg-success-900/20 rounded-lg">
+                                    <Trophy size={16} className="text-success-600" />
+                                    <span className="font-medium text-success-700 dark:text-success-300">{quickStats.completedToday}/{quickStats.weeklyGoal} goals</span>
+                                </div>
+                            </div>
+
+                            {/* Notifications */}
+                            <div className="relative notifications-container">
+                                <button 
+                                    onClick={() => setShowNotifications(!showNotifications)}
+                                    className="relative p-2 text-neutral-600 dark:text-neutral-300 hover:bg-surface-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                                >
+                                    <Bell size={20} />
+                                    {notifications.filter(n => !n.read).length > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                                    )}
+                                </button>
+
+                                {/* Notifications Dropdown */}
+                                {showNotifications && (
+                                    <div className="absolute right-0 top-12 w-80 bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-surface-200 dark:border-neutral-800 z-[60]">
+                                        <div className="p-4 border-b border-surface-200 dark:border-neutral-800">
+                                            <div className="flex items-center justify-between">
+                                                <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Notifications</h3>
+                                                <button 
+                                                    onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
+                                                    className="text-sm text-primary-600 hover:text-primary-700 transition-colors"
+                                                >
+                                                    Mark all read
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="max-h-80 overflow-y-auto">
+                                            {notifications.map((notification) => (
+                                                <div 
+                                                    key={notification.id}
+                                                    className={`p-4 border-b border-surface-100 dark:border-neutral-800 hover:bg-surface-50 dark:hover:bg-neutral-800 transition-colors ${
+                                                        !notification.read ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className={`p-2 rounded-lg ${
+                                                            notification.type === 'success' ? 'bg-success-100 dark:bg-success-900/30' :
+                                                            notification.type === 'achievement' ? 'bg-warning-100 dark:bg-warning-900/30' :
+                                                            'bg-info-100 dark:bg-info-900/30'
+                                                        }`}>
+                                                            {notification.type === 'success' ? <CheckCircle size={16} className="text-success-600" /> :
+                                                             notification.type === 'achievement' ? <Trophy size={16} className="text-warning-600" /> :
+                                                             <Bell size={16} className="text-info-600" />}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">
+                                                                {notification.title}
+                                                            </h4>
+                                                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                                                                {notification.message}
+                                                            </p>
+                                                            <p className="text-xs text-neutral-500 mt-2">
+                                                                {notification.time}
+                                                            </p>
+                                                        </div>
+                                                        {!notification.read && (
+                                                            <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Quick Actions */}
+                            <button className="p-2 text-neutral-600 dark:text-neutral-300 hover:bg-surface-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
+                                <PlusCircle size={20} />
                             </button>
                         </div>
-                    )}
+                    </div>
+                </header>
+                {/* Enhanced Content Area */}
+                <main className="p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-80px)]">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -20, scale: 0.98 }}
+                            transition={{ 
+                                duration: 0.3,
+                                ease: [0.4, 0, 0.2, 1]
+                            }}
+                            className="w-full"
+                        >
+                            {renderContent()}
+                        </motion.div>
+                    </AnimatePresence>
                 </main>
             </div>
+            {mobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+            )}
             {isAddProjectModalOpen && (
                 <AddProjectModal 
                     isOpen={isAddProjectModalOpen} 
@@ -840,43 +1128,24 @@ const Dashboard = ({ onLogout, user }) => {
                     onAddProject={handleAddProject} 
                 />
             )}
+            
+            {/* Toast Notifications */}
+            <Toaster 
+                position="top-right"
+                toastOptions={{
+                    duration: 4000,
+                    style: {
+                        background: 'var(--toast-bg, #ffffff)',
+                        color: 'var(--toast-text, #000000)',
+                        border: '1px solid var(--toast-border, #e5e7eb)',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    },
+                }}
+            />
         </div>
     );
 };
 
-// App wrapper with default user
-// --- App Component (The Main Controller) ---
-const App = () => {
-    // Manages the current user. null means logged out.
-    const [user, setUser] = useState(null);
-
-    // This runs once when the app starts to check for a saved session.
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
-
-    // This function is called when login is successful.
-    const handleLogin = (userData) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-    };
-
-    // This function is called when the user clicks "Logout".
-    const handleLogout = () => {
-        setUser(null);
-        localStorage.removeItem('user'); // Clear the session
-        localStorage.removeItem('careerPaths'); // Optional: also clear the roadmap
-    };
-
-    // If a 'user' exists, show the Dashboard. Otherwise, show the LoginPage.
-    return user ? (
-        <Dashboard onLogout={handleLogout} user={user} />
-    ) : (
-        <LoginPage onLogin={handleLogin} />
-    );
-};
 
 export default Dashboard;
