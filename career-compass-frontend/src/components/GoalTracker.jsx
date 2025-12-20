@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { 
+import {
     Target, Plus, CheckCircle, Clock, Calendar, TrendingUp,
     Edit3, Trash2, Star, Award, Zap, BookOpen, Code, Users,
     Briefcase, GraduationCap, Trophy, Flag, BarChart3
@@ -125,48 +125,82 @@ const GoalTracker = () => {
     const updateMilestone = (id, field, value) => {
         setNewGoal(prev => ({
             ...prev,
-            milestones: prev.milestones.map(m => 
+            milestones: prev.milestones.map(m =>
                 m.id === id ? { ...m, [field]: value } : m
             )
         }));
+    };
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editGoalId, setEditGoalId] = useState(null);
+
+    const handleEditGoal = (goal) => {
+        setNewGoal({
+            title: goal.title,
+            description: goal.description,
+            category: goal.category,
+            priority: goal.priority,
+            deadline: goal.deadline ? new Date(goal.deadline).toISOString().split('T')[0] : '',
+            milestones: goal.milestones || []
+        });
+        setEditGoalId(goal._id);
+        setIsEditing(true);
+        setShowAddGoal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowAddGoal(false);
+        setIsEditing(false);
+        setEditGoalId(null);
+        setNewGoal({
+            title: '',
+            description: '',
+            category: 'career',
+            priority: 'medium',
+            deadline: '',
+            milestones: []
+        });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/goals', {
-                method: 'POST',
+            const url = isEditing
+                ? `http://localhost:5000/api/goals/${editGoalId}`
+                : 'http://localhost:5000/api/goals';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(newGoal)
             });
-            
+
             const data = await response.json();
             if (data.success) {
-                setGoals([data.goal, ...goals]);
-                setShowAddGoal(false);
-                setNewGoal({
-                    title: '',
-                    description: '',
-                    category: 'career',
-                    priority: 'medium',
-                    deadline: '',
-                    milestones: []
-                });
-                toast.success('Goal created successfully!');
+                if (isEditing) {
+                    setGoals(goals.map(g => g._id === editGoalId ? data.goal : g));
+                    toast.success('Goal updated successfully!');
+                } else {
+                    setGoals([data.goal, ...goals]);
+                    toast.success('Goal created successfully!');
+                }
+                handleCloseModal();
                 fetchGoalStats(); // Refresh stats
             } else {
-                toast.error(data.error || 'Failed to create goal');
+                toast.error(data.error || `Failed to ${isEditing ? 'update' : 'create'} goal`);
             }
         } catch (error) {
-            console.error('Error creating goal:', error);
-            toast.error('Failed to create goal');
+            console.error(`Error ${isEditing ? 'updating' : 'creating'} goal:`, error);
+            toast.error(`Failed to ${isEditing ? 'update' : 'create'} goal`);
         }
     };
 
+    // Kept for backward compatibility with existing code if called elsewhere, calling the internal update logic
     const handleUpdateGoal = async (goalId, updates) => {
         try {
             const token = localStorage.getItem('token');
@@ -178,11 +212,11 @@ const GoalTracker = () => {
                 },
                 body: JSON.stringify(updates)
             });
-            
+
             const data = await response.json();
             if (data.success) {
                 setGoals(goals.map(g => g._id === goalId ? data.goal : g));
-                toast.success('Goal updated successfully!');
+                // Only show toast if it's a specific user action (handled by toggleMilestone etc., but good to have fallback)
                 fetchGoalStats();
             } else {
                 toast.error(data.error || 'Failed to update goal');
@@ -195,14 +229,14 @@ const GoalTracker = () => {
 
     const handleDeleteGoal = async (goalId) => {
         if (!window.confirm('Are you sure you want to delete this goal?')) return;
-        
+
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`http://localhost:5000/api/goals/${goalId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            
+
             const data = await response.json();
             if (data.success) {
                 setGoals(goals.filter(g => g._id !== goalId));
@@ -228,7 +262,7 @@ const GoalTracker = () => {
                 },
                 body: JSON.stringify({ completed })
             });
-            
+
             const data = await response.json();
             if (data.success) {
                 setGoals(goals.map(g => g._id === goalId ? data.goal : g));
@@ -244,8 +278,8 @@ const GoalTracker = () => {
     };
 
     return (
-        <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-7xl mx-auto"
         >
@@ -292,11 +326,10 @@ const GoalTracker = () => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
-                                    activeTab === tab.id
-                                        ? 'bg-gradient-to-r from-primary-500 to-accent-600 text-white shadow-lg shadow-primary-500/20'
-                                        : 'bg-surface-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-surface-200 dark:hover:bg-neutral-700'
-                                }`}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${activeTab === tab.id
+                                    ? 'bg-gradient-to-r from-primary-500 to-accent-600 text-white shadow-lg shadow-primary-500/20'
+                                    : 'bg-surface-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-surface-200 dark:hover:bg-neutral-700'
+                                    }`}
                             >
                                 <Icon size={18} />
                                 {tab.name}
@@ -323,279 +356,288 @@ const GoalTracker = () => {
                     {/* Goals Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {filteredGoals.map((goal, index) => {
-                    const Icon = getCategoryIcon(goal.category);
-                    return (
-                        <motion.div
-                            key={goal.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="card-hover p-6"
-                        >
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-start gap-3">
-                                    <div className={`p-2 bg-${getCategoryColor(goal.category)}-500 rounded-lg`}>
-                                        <Icon size={20} className="text-white" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-                                            {goal.title}
-                                        </h3>
-                                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
-                                            {goal.description}
-                                        </p>
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(goal.priority)}`}>
-                                                {goal.priority.charAt(0).toUpperCase() + goal.priority.slice(1)}
-                                            </span>
-                                            <span className="text-xs text-neutral-500 flex items-center gap-1">
-                                                <Calendar size={12} />
-                                                Due: {new Date(goal.deadline).toLocaleDateString()}
-                                            </span>
+                            const Icon = getCategoryIcon(goal.category);
+                            return (
+                                <motion.div
+                                    key={goal.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="card-hover p-6"
+                                >
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex items-start gap-3">
+                                            <div className={`p-2 bg-${getCategoryColor(goal.category)}-500 rounded-lg`}>
+                                                <Icon size={20} className="text-white" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+                                                    {goal.title}
+                                                </h3>
+                                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                                                    {goal.description}
+                                                </p>
+                                                <span className="text-xs text-neutral-500 flex items-center gap-1">
+                                                    <Calendar size={12} />
+                                                    Due: {new Date(goal.deadline).toLocaleDateString()}
+                                                </span>
+                                            </div>
+
+                                            {/* Progress Bar */}
+                                            <div className="mt-3">
+                                                <div className="flex items-center justify-between text-xs mb-1">
+                                                    <span className="text-neutral-500 dark:text-neutral-400">Progress</span>
+                                                    <span className="font-medium text-neutral-700 dark:text-neutral-300">{goal.progress || 0}%</span>
+                                                </div>
+                                                <div className="w-full h-2 bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${goal.progress || 0}%` }}
+                                                        className={`h-full rounded-full ${goal.progress === 100 ? 'bg-success-500' : 'bg-primary-500'
+                                                            }`}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={() => {
-                                            // TODO: Implement edit functionality
-                                            toast.info('Edit functionality coming soon!');
-                                        }}
-                                        className="p-1 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                                    >
-                                        <Edit3 size={16} />
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDeleteGoal(goal._id)}
-                                        className="p-1 text-neutral-500 hover:text-error-600"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            </div>
 
-                            {/* Progress Bar */}
-                            <div className="mb-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Progress</span>
-                                    <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">{goal.progress}%</span>
-                                </div>
-                                <div className="w-full bg-surface-200 dark:bg-neutral-700 rounded-full h-2">
-                                    <div 
-                                        className={`bg-gradient-to-r from-${getCategoryColor(goal.category)}-500 to-${getCategoryColor(goal.category)}-600 h-2 rounded-full transition-all duration-300`}
-                                        style={{ width: `${goal.progress}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-
-                            {/* Milestones */}
-                            <div className="mb-4">
-                                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3">
-                                    Milestones ({goal.milestones.filter(m => m.completed).length}/{goal.milestones.length})
-                                </h4>
-                                <div className="space-y-2">
-                                    {goal.milestones.slice(0, 3).map((milestone) => (
-                                        <div key={milestone._id} className="flex items-center gap-3 text-sm">
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center justify-end gap-2 mb-4">
+                                        <button
+                                            onClick={() => handleEditGoal(goal)}
+                                            className="p-1 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                                            title="Edit Goal"
+                                        >
+                                            <Edit3 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteGoal(goal._id)}
+                                            className="p-1 text-neutral-500 hover:text-error-600"
+                                            title="Delete Goal"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                        {/* Mark Complete Button */}
+                                        {goal.status !== 'completed' && (
                                             <button
-                                                onClick={() => handleToggleMilestone(goal._id, milestone._id, !milestone.completed)}
-                                                className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
-                                                    milestone.completed 
-                                                        ? 'bg-success-500 text-white hover:bg-success-600' 
-                                                        : 'bg-surface-200 dark:bg-neutral-700 hover:bg-surface-300 dark:hover:bg-neutral-600'
-                                                }`}
+                                                onClick={() => handleUpdateGoal(goal._id, { status: 'completed' })}
+                                                className="ml-2 p-1 text-success-600 hover:text-success-700 dark:text-success-400 dark:hover:text-success-300"
+                                                title="Mark as Completed"
                                             >
-                                                {milestone.completed && <CheckCircle size={12} />}
+                                                <CheckCircle size={18} />
                                             </button>
-                                            <span className={`flex-1 ${
-                                                milestone.completed 
-                                                    ? 'text-neutral-500 line-through' 
-                                                    : 'text-neutral-700 dark:text-neutral-300'
-                                            }`}>
-                                                {milestone.title}
-                                            </span>
-                                        </div>
-                                    ))}
-                                    {goal.milestones.length > 3 && (
-                                        <div className="text-xs text-neutral-500 ml-7">
-                                            +{goal.milestones.length - 3} more milestones
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                                        )}
+                                    </div>
 
-                            {/* Tags */}
-                            <div className="flex flex-wrap gap-2">
-                                {goal.tags.map((tag) => (
-                                    <span key={tag} className="px-2 py-1 bg-surface-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded text-xs">
-                                        #{tag}
-                                    </span>
-                                ))}
-                            </div>
-                        </motion.div>
-                    );
-                })}
+                                    {/* Milestones */}
+                                    <div className="mb-4">
+                                        <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3">
+                                            Milestones ({goal.milestones.filter(m => m.completed).length}/{goal.milestones.length})
+                                        </h4>
+                                        <div className="space-y-2">
+                                            {goal.milestones.slice(0, 3).map((milestone) => (
+                                                <div key={milestone._id} className="flex items-center gap-3 text-sm">
+                                                    <button
+                                                        onClick={() => handleToggleMilestone(goal._id, milestone._id, !milestone.completed)}
+                                                        className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${milestone.completed
+                                                            ? 'bg-success-500 text-white hover:bg-success-600'
+                                                            : 'bg-surface-200 dark:bg-neutral-700 hover:bg-surface-300 dark:hover:bg-neutral-600'
+                                                            }`}
+                                                    >
+                                                        {milestone.completed && <CheckCircle size={12} />}
+                                                    </button>
+                                                    <span className={`flex-1 ${milestone.completed
+                                                        ? 'text-neutral-500 line-through'
+                                                        : 'text-neutral-700 dark:text-neutral-300'
+                                                        }`}>
+                                                        {milestone.title}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {goal.milestones.length > 3 && (
+                                                <div className="text-xs text-neutral-500 ml-7">
+                                                    +{goal.milestones.length - 3} more milestones
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Tags */}
+                                    <div className="flex flex-wrap gap-2">
+                                        {goal.tags.map((tag) => (
+                                            <span key={tag} className="px-2 py-1 bg-surface-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded text-xs">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </>
-            )}
+            )
+            }
 
             {/* Add Goal Modal */}
-            {showAddGoal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-                    >
-                        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Add New Goal</h2>
-                                <button
-                                    onClick={() => setShowAddGoal(false)}
-                                    className="btn btn-md btn-ghost"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                                    Goal Title *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newGoal.title}
-                                    onChange={(e) => setNewGoal(prev => ({ ...prev, title: e.target.value }))}
-                                    className="input w-full"
-                                    placeholder="Enter your goal title..."
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={newGoal.description}
-                                    onChange={(e) => setNewGoal(prev => ({ ...prev, description: e.target.value }))}
-                                    rows={3}
-                                    className="input w-full resize-none"
-                                    placeholder="Describe your goal in detail..."
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                                        Category
-                                    </label>
-                                    <select
-                                        value={newGoal.category}
-                                        onChange={(e) => setNewGoal(prev => ({ ...prev, category: e.target.value }))}
-                                        className="input w-full"
-                                    >
-                                        {categories.map((category) => (
-                                            <option key={category.id} value={category.id}>
-                                                {category.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                                        Priority
-                                    </label>
-                                    <select
-                                        value={newGoal.priority}
-                                        onChange={(e) => setNewGoal(prev => ({ ...prev, priority: e.target.value }))}
-                                        className="input w-full"
-                                    >
-                                        {priorities.map((priority) => (
-                                            <option key={priority.id} value={priority.id}>
-                                                {priority.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                                        Deadline
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={newGoal.deadline}
-                                        onChange={(e) => setNewGoal(prev => ({ ...prev, deadline: e.target.value }))}
-                                        className="input w-full"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                                        Milestones
-                                    </label>
+            {
+                showAddGoal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+                        >
+                            <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{isEditing ? 'Edit Goal' : 'Add New Goal'}</h2>
                                     <button
-                                        type="button"
-                                        onClick={addMilestone}
-                                        className="btn btn-sm btn-outline"
+                                        onClick={handleCloseModal}
+                                        className="btn btn-md btn-ghost"
                                     >
-                                        <Plus size={14} />
-                                        Add Milestone
+                                        ✕
                                     </button>
                                 </div>
-                                <div className="space-y-3">
-                                    {newGoal.milestones.map((milestone) => (
-                                        <div key={milestone.id} className="flex items-center gap-3 p-3 bg-surface-50 dark:bg-neutral-800 rounded-lg">
-                                            <input
-                                                type="text"
-                                                value={milestone.title}
-                                                onChange={(e) => updateMilestone(milestone.id, 'title', e.target.value)}
-                                                className="input flex-1"
-                                                placeholder="Milestone title..."
-                                            />
-                                            <input
-                                                type="date"
-                                                value={milestone.dueDate}
-                                                onChange={(e) => updateMilestone(milestone.id, 'dueDate', e.target.value)}
-                                                className="input w-40"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => removeMilestone(milestone.id)}
-                                                className="text-error-600 hover:text-error-700 p-1"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
                             </div>
 
-                            <div className="flex gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAddGoal(false)}
-                                    className="btn btn-md btn-ghost flex-1"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="btn btn-md btn-primary flex-1"
-                                >
-                                    Create Goal
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
-                </div>
-            )}
-        </motion.div>
+                            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+                                        Goal Title *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newGoal.title}
+                                        onChange={(e) => setNewGoal(prev => ({ ...prev, title: e.target.value }))}
+                                        className="input w-full"
+                                        placeholder="Enter your goal title..."
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        value={newGoal.description}
+                                        onChange={(e) => setNewGoal(prev => ({ ...prev, description: e.target.value }))}
+                                        rows={3}
+                                        className="input w-full resize-none"
+                                        placeholder="Describe your goal in detail..."
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+                                            Category
+                                        </label>
+                                        <select
+                                            value={newGoal.category}
+                                            onChange={(e) => setNewGoal(prev => ({ ...prev, category: e.target.value }))}
+                                            className="input w-full"
+                                        >
+                                            {categories.map((category) => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+                                            Priority
+                                        </label>
+                                        <select
+                                            value={newGoal.priority}
+                                            onChange={(e) => setNewGoal(prev => ({ ...prev, priority: e.target.value }))}
+                                            className="input w-full"
+                                        >
+                                            {priorities.map((priority) => (
+                                                <option key={priority.id} value={priority.id}>
+                                                    {priority.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+                                            Deadline
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={newGoal.deadline}
+                                            onChange={(e) => setNewGoal(prev => ({ ...prev, deadline: e.target.value }))}
+                                            className="input w-full"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                                            Milestones
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={addMilestone}
+                                            className="btn btn-sm btn-outline"
+                                        >
+                                            <Plus size={14} />
+                                            Add Milestone
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {newGoal.milestones.map((milestone) => (
+                                            <div key={milestone.id} className="flex items-center gap-3 p-3 bg-surface-50 dark:bg-neutral-800 rounded-lg">
+                                                <input
+                                                    type="text"
+                                                    value={milestone.title}
+                                                    onChange={(e) => updateMilestone(milestone.id, 'title', e.target.value)}
+                                                    className="input flex-1"
+                                                    placeholder="Milestone title..."
+                                                />
+                                                <input
+                                                    type="date"
+                                                    value={milestone.dueDate}
+                                                    onChange={(e) => updateMilestone(milestone.id, 'dueDate', e.target.value)}
+                                                    className="input w-40"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeMilestone(milestone.id)}
+                                                    className="text-error-600 hover:text-error-700 p-1"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                                    <button
+                                        type="button"
+                                        onClick={handleCloseModal}
+                                        className="btn btn-md btn-ghost flex-1"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-md btn-primary flex-1"
+                                    >
+                                        {isEditing ? 'Update Goal' : 'Create Goal'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )
+            }
+        </motion.div >
     );
 };
 

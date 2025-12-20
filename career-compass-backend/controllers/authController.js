@@ -38,8 +38,12 @@ exports.register = async (req, res) => {
       message: "User registered successfully.",
       data: {
         token,
-        userId: user._id,
-        username: user.username,
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName || user.username
+        }
       },
     });
   } catch (err) {
@@ -58,15 +62,25 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
+  console.log("🔍 Login Attempt:", { username, password }); // DEBUG LOG
+
   if (!username || !password) {
     return res.status(400).json({
       success: false,
-      error: "Email and password are required.",
+      error: "Username and password are required.",
     });
   }
 
   try {
-    const user = await User.findOne({ username });
+    // Case-insensitive search using regex for BOTH username and email
+    const user = await User.findOne({
+      $or: [
+        { username: { $regex: new RegExp(`^${username}$`, 'i') } },
+        { email: { $regex: new RegExp(`^${username}$`, 'i') } }
+      ]
+    });
+    console.log("👤 User found in DB:", user); // DEBUG LOG
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -89,8 +103,12 @@ exports.login = async (req, res) => {
       message: "Login successful.",
       data: {
         token,
-        userId: user._id,
-        username: user.username,
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName || user.username
+        }
       },
     });
   } catch (err) {

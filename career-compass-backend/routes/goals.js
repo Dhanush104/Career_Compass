@@ -9,7 +9,9 @@ const {
     deleteGoal,
     getGoalStats,
     addGoalComment,
-    toggleGoalLike
+    toggleGoalLike,
+    getTodaysTasks,
+    getUpcomingDeadlines
 } = require('../controllers/goalController');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -27,6 +29,8 @@ router.put('/:goalId/milestones/:milestoneId', updateMilestone);
 
 // Statistics
 router.get('/stats', getGoalStats);
+router.get('/today', getTodaysTasks);
+router.get('/deadlines', getUpcomingDeadlines);
 
 // Social features
 router.post('/:goalId/comments', addGoalComment);

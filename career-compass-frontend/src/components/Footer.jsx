@@ -4,7 +4,7 @@ import { FaFacebook, FaTwitter, FaLinkedinIn } from "react-icons/fa";
 const Footer = () => {
   return (
     <footer className="relative z-10 text-center py-10 px-3 md:px-3 bg-gradient-to-br from-success-50 via-primary-50 to-accent-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-900">
-      
+
       {/* Brand & Tagline */}
       <div className="flex flex-col items-center mb-6">
         <h2 className="text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 via-success-500 to-accent-400 mb-1 drop-shadow-sm">

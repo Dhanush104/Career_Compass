@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-    TrendingUp, Award, Target, Clock, Zap, Star, 
-    BarChart3, PieChart, Calendar, Trophy, Fire,
+import {
+    TrendingUp, Award, Target, Clock, Zap, Star,
+    BarChart3, PieChart, Calendar, Trophy, Flame,
     BookOpen, Code, Users, Briefcase, Brain
 } from 'lucide-react';
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    BarChart, Bar, Legend, ComposedChart, Line,
+    RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+} from 'recharts';
 
 const AnalyticsDashboard = () => {
     const [dashboardData, setDashboardData] = useState(null);
@@ -26,14 +31,9 @@ const AnalyticsDashboard = () => {
             const data = await response.json();
             if (data.success) {
                 setDashboardData(data.dashboard);
-            } else {
-                // Set mock data if API fails
-                setDashboardData(getMockDashboardData());
             }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-            // Set mock data on error
-            setDashboardData(getMockDashboardData());
         } finally {
             setLoading(false);
         }
@@ -48,50 +48,12 @@ const AnalyticsDashboard = () => {
             const data = await response.json();
             if (data.success) {
                 setLeaderboard(data.leaderboard);
-            } else {
-                setLeaderboard(getMockLeaderboard());
             }
         } catch (error) {
             console.error('Error fetching leaderboard:', error);
-            setLeaderboard(getMockLeaderboard());
         }
     };
 
-    // Mock data functions
-    const getMockDashboardData = () => ({
-        level: 5,
-        totalXP: 1250,
-        xpToNextLevel: 250,
-        currentStreak: 7,
-        longestStreak: 15,
-        totalTimeSpent: 2400, // minutes
-        totalSessions: 45,
-        totalActivitiesCompleted: 89,
-        goals: { totalGoals: 8, completedGoals: 3, activeGoals: 5 },
-        interviews: { totalSessions: 12, completedSessions: 8, averageRating: 4.2 },
-        recentActivity: [
-            { date: new Date(), activitiesCompleted: 3, xpEarned: 75, timeSpent: 45, sessionsCount: 2 },
-            { date: new Date(Date.now() - 86400000), activitiesCompleted: 2, xpEarned: 50, timeSpent: 30, sessionsCount: 1 }
-        ],
-        topSkills: [
-            { skillName: 'React', currentLevel: 'Advanced', progress: 85, practiceHours: 45.5 },
-            { skillName: 'JavaScript', currentLevel: 'Expert', progress: 95, practiceHours: 67.2 }
-        ],
-        recentAchievements: [
-            { title: 'Week Streak', xpReward: 100, unlockedAt: new Date() }
-        ],
-        learningInsights: {
-            preferredTimeOfDay: 'Morning',
-            averageSessionLength: 35,
-            mostActiveDay: 'Tuesday'
-        }
-    });
-
-    const getMockLeaderboard = () => [
-        { userId: { username: 'Alex', fullName: 'Alex Chen' }, totalXP: 2500 },
-        { userId: { username: 'Sarah', fullName: 'Sarah Johnson' }, totalXP: 2200 },
-        { userId: { username: 'Mike', fullName: 'Mike Rodriguez' }, totalXP: 1950 }
-    ];
 
     if (loading) {
         return (
@@ -119,8 +81,8 @@ const AnalyticsDashboard = () => {
     ];
 
     return (
-        <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-7xl mx-auto"
         >
@@ -161,10 +123,10 @@ const AnalyticsDashboard = () => {
                         </div>
                     </div>
                     <div className="w-full bg-surface-200 dark:bg-neutral-700 rounded-full h-3">
-                        <div 
+                        <div
                             className="bg-gradient-to-r from-primary-500 to-accent-600 h-3 rounded-full transition-all duration-500"
-                            style={{ 
-                                width: `${((dashboardData.totalXP % 100) / 100) * 100}%` 
+                            style={{
+                                width: `${((dashboardData.totalXP % 100) / 100) * 100}%`
                             }}
                         ></div>
                     </div>
@@ -175,7 +137,7 @@ const AnalyticsDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div className="card-hover p-6 text-center">
                     <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center mx-auto mb-3">
-                        <Fire size={24} className="text-primary-600 dark:text-primary-400" />
+                        <Flame size={24} className="text-primary-600 dark:text-primary-400" />
                     </div>
                     <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
                         {dashboardData.currentStreak}
@@ -232,87 +194,93 @@ const AnalyticsDashboard = () => {
                     <div className="card-hover p-6">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                                Recent Activity
+                                Activity Overview
                             </h3>
                             <div className="flex gap-2">
-                                {['week', 'month', '3months'].map((period) => (
+                                {['week', 'month'].map((period) => (
                                     <button
                                         key={period}
                                         onClick={() => setSelectedPeriod(period)}
-                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                                            selectedPeriod === period
-                                                ? 'bg-primary-500 text-white'
-                                                : 'bg-surface-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                                        }`}
+                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${selectedPeriod === period
+                                            ? 'bg-primary-500 text-white'
+                                            : 'bg-surface-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                                            }`}
                                     >
-                                        {period === '3months' ? '3M' : period === 'month' ? '1M' : '1W'}
+                                        {period === 'month' ? 'Last 30 Days' : 'Last 7 Days'}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Activity Timeline */}
-                        <div className="space-y-4">
-                            {dashboardData.recentActivity.map((activity, index) => (
-                                <div key={index} className="flex items-center gap-4 p-4 bg-surface-50 dark:bg-neutral-800 rounded-xl">
-                                    <div className="text-sm text-neutral-600 dark:text-neutral-400 w-20">
-                                        {new Date(activity.date).toLocaleDateString('en-US', { 
-                                            month: 'short', 
-                                            day: 'numeric' 
-                                        })}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                                                {activity.activitiesCompleted} activities completed
-                                            </div>
-                                            <div className="text-xs text-success-600 dark:text-success-400 font-medium">
-                                                +{activity.xpEarned} XP
-                                            </div>
-                                        </div>
-                                        <div className="text-xs text-neutral-500">
-                                            {Math.round(activity.timeSpent)} minutes • {activity.sessionsCount} sessions
-                                        </div>
-                                    </div>
-                                    <div className="w-16 h-2 bg-surface-200 dark:bg-neutral-700 rounded-full">
-                                        <div 
-                                            className="h-2 bg-gradient-to-r from-primary-500 to-accent-600 rounded-full"
-                                            style={{ width: `${Math.min((activity.timeSpent / 120) * 100, 100)}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={dashboardData.recentActivity}>
+                                    <defs>
+                                        <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                                        stroke="#9ca3af"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis yAxisId="left" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis yAxisId="right" orientation="right" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '0.75rem', color: '#f3f4f6' }}
+                                        itemStyle={{ color: '#f3f4f6' }}
+                                    />
+                                    <Legend />
+                                    <Bar yAxisId="left" dataKey="activitiesCompleted" name="Activities" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={20} />
+                                    <Area yAxisId="right" type="monotone" dataKey="xpEarned" name="XP Earned" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorXp)" />
+                                </ComposedChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
                 </div>
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                    {/* Top Skills */}
+                    {/* Top Skills Radar */}
                     <div className="card-hover p-6">
                         <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
                             <Brain size={20} className="text-primary-600" />
-                            Top Skills
+                            Skills Analysis
                         </h3>
-                        <div className="space-y-3">
-                            {dashboardData.topSkills.map((skill, index) => (
+                        <div className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={dashboardData.topSkills}>
+                                    <PolarGrid stroke="#374151" opacity={0.2} />
+                                    <PolarAngleAxis dataKey="skillName" fontSize={12} tick={{ fill: '#9ca3af' }} />
+                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                    <Radar
+                                        name="Proficiency"
+                                        dataKey="progress"
+                                        stroke="#f59e0b"
+                                        fill="#f59e0b"
+                                        fillOpacity={0.5}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '0.75rem', color: '#f3f4f6' }}
+                                        itemStyle={{ color: '#f3f4f6' }}
+                                    />
+                                </RadarChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="space-y-3 mt-4">
+                            {dashboardData.topSkills.slice(0, 3).map((skill, index) => (
                                 <div key={index} className="flex items-center justify-between">
-                                    <div>
-                                        <div className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
-                                            {skill.skillName}
-                                        </div>
-                                        <div className="text-xs text-neutral-500">
-                                            {skill.practiceHours.toFixed(1)}h practiced
-                                        </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${index === 0 ? 'bg-primary-500' : index === 1 ? 'bg-secondary-500' : 'bg-accent-500'}`}></div>
+                                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{skill.skillName}</span>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-sm font-bold text-primary-600 dark:text-primary-400">
-                                            {skill.currentLevel}
-                                        </div>
-                                        <div className="text-xs text-neutral-500">
-                                            {skill.progress}%
-                                        </div>
-                                    </div>
+                                    <span className="text-xs font-bold text-primary-600">{skill.currentLevel}</span>
                                 </div>
                             ))}
                         </div>
@@ -352,12 +320,11 @@ const AnalyticsDashboard = () => {
                         <div className="space-y-3">
                             {leaderboard.map((user, index) => (
                                 <div key={index} className="flex items-center gap-3">
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                                        index === 0 ? 'bg-warning-500 text-white' :
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${index === 0 ? 'bg-warning-500 text-white' :
                                         index === 1 ? 'bg-neutral-400 text-white' :
-                                        index === 2 ? 'bg-amber-600 text-white' :
-                                        'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
-                                    }`}>
+                                            index === 2 ? 'bg-amber-600 text-white' :
+                                                'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                                        }`}>
                                         {index + 1}
                                     </div>
                                     <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-xs font-bold">

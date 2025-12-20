@@ -42,9 +42,18 @@ const userSchema = new mongoose.Schema({
     linkedInUrl: { type: String, default: '' },
     githubUrl: { type: String, default: '' },
     mobileNumber: { type: String, default: '' },
+    bio: { type: String, default: '' },
     
-    // Skills will be an array of strings
-    skills: [{ type: String }],
+    // Skills with proper structure
+    skills: [{
+        name: { type: String, required: true },
+        level: { 
+            type: String, 
+            enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
+            default: 'Beginner'
+        },
+        yearsOfExperience: { type: Number, default: 0 }
+    }],
     
     // UPDATED: Structured roadmap to match CareerPath model
     roadmap: {
@@ -90,10 +99,10 @@ const userSchema = new mongoose.Schema({
     achievements: { type: [String], default: [] },
     xp: { type: Number, default: 0 },
     level: { type: Number, default: 1 },
+    streak: { type: Number, default: 0 },
     projects: [projectSchema],
     
     // Social and Community Features
-    bio: { type: String, default: '' },
     interests: [String],
     mentorshipOffered: { type: Boolean, default: false },
     mentorshipSeeking: { type: Boolean, default: false },

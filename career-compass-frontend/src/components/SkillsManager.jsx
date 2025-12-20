@@ -7,8 +7,8 @@ import {
     Search, Filter, ChevronDown, Edit2, Trash2, Check
 } from 'lucide-react';
 
-const SkillsManager = ({ initialSkills, onUpdate }) => {
-    const [skills, setSkills] = useState(initialSkills || []);
+const SkillsManager = ({ user, initialSkills, onUpdate }) => {
+    const [skills, setSkills] = useState([]);
     const [newSkillName, setNewSkillName] = useState('');
     const [newSkillLevel, setNewSkillLevel] = useState(50);
     const [newSkillCategory, setNewSkillCategory] = useState('Programming');
@@ -29,9 +29,45 @@ const SkillsManager = ({ initialSkills, onUpdate }) => {
         { name: 'Soft Skills', icon: Users, color: 'amber' },
     ];
 
+    // Fetch skills on component mount
     useEffect(() => {
-        setSkills(initialSkills || []);
-    }, [initialSkills]);
+        const fetchSkills = async () => {
+            // First try to use skills from user prop
+            if (user?.skills && Array.isArray(user.skills) && user.skills.length > 0) {
+                setSkills(user.skills);
+                return;
+            }
+
+            // If no skills in user prop, try initialSkills
+            if (initialSkills && Array.isArray(initialSkills) && initialSkills.length > 0) {
+                setSkills(initialSkills);
+                return;
+            }
+
+            // Otherwise fetch from API
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const response = await fetch('http://localhost:5000/api/users/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData.skills && Array.isArray(userData.skills)) {
+                        setSkills(userData.skills);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching skills:', error);
+            }
+        };
+
+        fetchSkills();
+    }, [user, initialSkills]);
 
     const getColorClasses = (color) => {
         const colors = {
@@ -112,12 +148,22 @@ const SkillsManager = ({ initialSkills, onUpdate }) => {
             });
 
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error);
+            if (!response.ok) throw new Error(data.error || 'Failed to save skills');
             
             toast.success('Skills saved successfully!');
-            onUpdate(data.user);
+            
+            // Update parent component with new user data
+            if (onUpdate && data.user) {
+                onUpdate(data.user);
+            }
+            
+            // Update local state with saved skills
+            if (data.user && data.user.skills) {
+                setSkills(data.user.skills);
+            }
         } catch (error) {
-            toast.error(error.message);
+            console.error('Error saving skills:', error);
+            toast.error(error.message || 'Failed to save skills');
         } finally {
             setLoading(false);
         }

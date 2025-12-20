@@ -44,7 +44,7 @@ const Header = ({ onLoginClick }) => {
 
   return (
     <header className="fixed top-0 left-0 w-full flex items-center justify-between px-6 py-4 md:px-12 backdrop-blur-md bg-surface-100/80 dark:bg-neutral-900/70 border-b border-surface-200 dark:border-neutral-800 z-50 transition-colors duration-300">
-      
+
       {/* Logo */}
       <motion.a
         href="/"
@@ -74,7 +74,7 @@ const Header = ({ onLoginClick }) => {
           </motion.a>
         ))}
       </nav>
-      
+
       {/* Buttons & Search */}
       <div className="flex items-center space-x-4">
         {/* Search Button */}
@@ -97,7 +97,7 @@ const Header = ({ onLoginClick }) => {
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </motion.button>
-        
+
         {/* Log In Button */}
         <motion.button
           onClick={onLoginClick}
