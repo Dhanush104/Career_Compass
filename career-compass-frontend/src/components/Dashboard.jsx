@@ -27,6 +27,7 @@ import GoalTracker from './GoalTracker.jsx';
 import AnalyticsDashboard from './AnalyticsDashboard.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import { EnhancedRoadmap, EnhancedProjects } from './EnhancedComponents';
+import { XPProgressChart, SkillsRadarChart, ActivityBarChart, GoalsDonutChart } from './DashboardCharts.jsx';
 
 // --- LoginPage Component (Handles Login UI and Logic) ---
 
@@ -748,6 +749,40 @@ const Dashboard = ({ onLogout, user }) => {
                     </div>
                 </div>
             )}
+
+            {/* Data Visualization Charts Section */}
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Performance Insights</h2>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Visual analytics of your progress</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* XP Progress Chart */}
+                    <XPProgressChart data={analyticsData?.recentActivity?.map(activity => ({
+                        date: new Date(activity.date).toLocaleDateString('en-US', { weekday: 'short' }),
+                        xp: activity.xpEarned
+                    }))} />
+
+                    {/* Skills Radar Chart */}
+                    <SkillsRadarChart skills={userSkills} />
+
+                    {/* Activity Bar Chart */}
+                    <ActivityBarChart data={analyticsData?.recentActivity?.map(activity => ({
+                        day: new Date(activity.date).toLocaleDateString('en-US', { weekday: 'short' }),
+                        activities: activity.activitiesCompleted
+                    }))} />
+
+                    {/* Goals Donut Chart */}
+                    <GoalsDonutChart goalsData={analyticsData?.goals ? [
+                        { name: 'Completed', value: analyticsData.goals.completedGoals || 0, color: '#10b981' },
+                        { name: 'Active', value: analyticsData.goals.activeGoals || 0, color: '#f59e0b' },
+                        { name: 'Pending', value: (analyticsData.goals.totalGoals || 0) - (analyticsData.goals.completedGoals || 0) - (analyticsData.goals.activeGoals || 0), color: '#6b7280' }
+                    ] : null} />
+                </div>
+            </div>
 
             {/* Enhanced Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">

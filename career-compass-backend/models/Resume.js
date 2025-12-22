@@ -1,71 +1,23 @@
-// models/Resume.js
 const mongoose = require('mongoose');
 
-const experienceSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    company: { type: String, required: true },
-    location: String,
-    startDate: Date,
-    endDate: Date,
-    current: { type: Boolean, default: false },
-    description: String,
-    achievements: [String]
-});
-
-const educationSchema = new mongoose.Schema({
-    degree: { type: String, required: true },
-    school: { type: String, required: true },
-    location: String,
-    graduationDate: Date,
-    gpa: String,
-    relevant: String
-});
-
-const skillSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    level: { 
-        type: String, 
-        enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
-        default: 'Intermediate' 
-    },
-    category: { 
-        type: String, 
-        enum: ['Technical', 'Soft Skills', 'Languages', 'Tools'],
-        default: 'Technical' 
-    }
-});
-
-const certificationSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    issuer: String,
-    issueDate: Date,
-    expiryDate: Date,
-    credentialId: String,
-    url: String
-});
-
-const languageSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    proficiency: { 
-        type: String, 
-        enum: ['Basic', 'Conversational', 'Fluent', 'Native'],
-        default: 'Conversational' 
-    }
-});
-
 const resumeSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    title: { type: String, required: true },
-    template: { 
-        type: String, 
-        enum: ['modern', 'creative', 'minimal', 'executive'],
-        default: 'modern' 
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    
-    // Personal Information
+    title: {
+        type: String,
+        default: 'My Resume'
+    },
+    template: {
+        type: String,
+        enum: ['modern', 'creative', 'minimal', 'executive'],
+        default: 'modern'
+    },
     personalInfo: {
-        fullName: { type: String, required: true },
-        email: { type: String, required: true },
+        fullName: String,
+        email: String,
         phone: String,
         location: String,
         website: String,
@@ -73,13 +25,32 @@ const resumeSchema = new mongoose.Schema({
         github: String,
         summary: String
     },
-    
-    // Resume Sections
-    experience: [experienceSchema],
-    education: [educationSchema],
-    skills: [skillSchema],
-    certifications: [certificationSchema],
-    languages: [languageSchema],
+    experience: [{
+        title: String,
+        company: String,
+        location: String,
+        startDate: Date,
+        endDate: Date,
+        current: Boolean,
+        description: String,
+        achievements: [String]
+    }],
+    education: [{
+        degree: String,
+        school: String,
+        location: String,
+        graduationDate: String,
+        gpa: String,
+        relevant: String
+    }],
+    skills: [{
+        name: String,
+        level: {
+            type: String,
+            enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
+        },
+        category: String
+    }],
     projects: [{
         title: String,
         description: String,
@@ -87,35 +58,35 @@ const resumeSchema = new mongoose.Schema({
         url: String,
         github: String
     }],
-    
-    // Metadata
-    isDefault: { type: Boolean, default: false },
-    isPublic: { type: Boolean, default: false },
-    downloadCount: { type: Number, default: 0 },
-    lastDownloaded: Date,
-    
-    // Analytics
-    viewCount: { type: Number, default: 0 },
-    shareCount: { type: Number, default: 0 },
-    
-    // Version control
-    version: { type: Number, default: 1 },
-    previousVersions: [{
-        version: Number,
-        data: mongoose.Schema.Types.Mixed,
-        createdAt: { type: Date, default: Date.now }
-    }]
-}, { timestamps: true });
+    certifications: [{
+        name: String,
+        issuer: String,
+        date: String
+    }],
+    languages: [{
+        language: String,
+        proficiency: {
+            type: String,
+            enum: ['Native', 'Fluent', 'Intermediate', 'Basic']
+        }
+    }],
+    isDefault: {
+        type: Boolean,
+        default: false
+    }
+}, {
+    timestamps: true
+});
 
-// Create a new version before major updates
-resumeSchema.methods.createVersion = function() {
-    this.previousVersions.push({
-        version: this.version,
-        data: this.toObject(),
-        createdAt: new Date()
-    });
-    this.version += 1;
-};
+// Ensure only one default resume per user
+resumeSchema.pre('save', async function (next) {
+    if (this.isDefault) {
+        await this.constructor.updateMany(
+            { userId: this.userId, _id: { $ne: this._id } },
+            { isDefault: false }
+        );
+    }
+    next();
+});
 
-const Resume = mongoose.model('Resume', resumeSchema);
-module.exports = Resume;
+module.exports = mongoose.model('Resume', resumeSchema);

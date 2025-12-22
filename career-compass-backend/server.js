@@ -64,6 +64,7 @@ const mentorshipRoutes = require('./routes/mentorship');
 const projectRoutes = require('./routes/projects');
 const skillRoutes = require('./routes/skills');
 const aiRoutes = require('./routes/ai');
+const resumeRoutes = require('./routes/resumes');
 
 // Use all routes
 app.use('/api/auth', authRoutes);
@@ -77,6 +78,7 @@ app.use('/api/mentorship', mentorshipRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/resumes', resumeRoutes);
 
 // 404 Handler - Must be after all routes
 app.use((req, res, next) => {

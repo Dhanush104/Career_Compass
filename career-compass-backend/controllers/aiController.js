@@ -43,7 +43,9 @@ exports.getChatResponse = async (req, res) => {
         }
 
         // Check if Gemini API key is configured (priority)
-        if (process.env.GEMINI_API_KEY) {
+        // Check if Gemini API key is configured (priority)
+        let lastError = null;
+        if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'PLACE_YOUR_GEMINI_API_KEY_HERE') {
             console.log('🤖 Attempting to use Gemini API...');
             try {
                 const aiResponse = await callGemini(message, conversationHistory, userContext);
@@ -55,21 +57,19 @@ exports.getChatResponse = async (req, res) => {
                 });
             } catch (aiError) {
                 console.error('❌ Gemini API Error:', aiError.message);
-                console.error('Full error:', aiError);
+                lastError = aiError.message;
                 // Fall through to try OpenAI or fallback
             }
         }
 
-        // Check if OpenAI API key is configured
-        if (!process.env.OPENAI_API_KEY) {
-            // Fallback to pattern-based responses
-            const response = generatePatternBasedResponse(message, user, analytics);
-            return res.json({
-                success: true,
-                response,
-                source: 'pattern-based'
-            });
-        }
+        // Fallback to pattern-based responses
+        const response = generatePatternBasedResponse(message, user, analytics);
+        return res.json({
+            success: true,
+            response,
+            source: 'pattern-based',
+            note: lastError ? `AI Error: ${lastError}` : 'Using offline mode. Add GEMINI_API_KEY to .env for AI responses.'
+        });
 
         // Call OpenAI API
         try {
