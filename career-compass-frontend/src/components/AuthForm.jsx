@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, User, Mail, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import config from "../config";
 
 const AuthForm = ({ onAuthSuccess, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -40,8 +41,8 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
     setLoading(true);
     setError("");
     const endpoint = isLogin
-      ? "http://localhost:5000/api/auth/login"
-      : "http://localhost:5000/api/auth/register";
+      ? `${config.apiUrl}/api/auth/login`
+      : `${config.apiUrl}/api/auth/register`;
     const body = isLogin
       ? { username, password }
       : { username, email, password };
@@ -58,7 +59,7 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
       if (onAuthSuccess) {
         // Pass both token and user data to the parent component
         // The token and user are inside the 'data' property of the response
-      onAuthSuccess(data.data.token, data.data.user);
+        onAuthSuccess(data.data.token, data.data.user);
       }
     } catch (err) {
       setError(err.message);
@@ -113,9 +114,8 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.username ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
-                    }`}
+                    className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${fieldErrors.username ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
+                      }`}
                     placeholder="Your username"
                   />
                   <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
@@ -143,9 +143,8 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${
-                          fieldErrors.email ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
-                        }`}
+                        className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${fieldErrors.email ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
+                          }`}
                         placeholder="you@example.com"
                       />
                       <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
@@ -171,9 +170,8 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.password ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
-                    }`}
+                    className={`block w-full px-10 py-2 border rounded-lg bg-surface-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all duration-300 ${fieldErrors.password ? "border-error-500" : "border-surface-300 dark:border-neutral-700"
+                      }`}
                     placeholder="••••••••"
                   />
                   <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
@@ -191,9 +189,8 @@ const AuthForm = ({ onAuthSuccess, onClose }) => {
                 type="submit"
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full flex justify-center py-2 px-4 rounded-lg font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 ${
-                  loading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={`w-full flex justify-center py-2 px-4 rounded-lg font-semibold text-white bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 ${loading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 disabled={loading}
               >
                 {loading ? "Processing..." : isLogin ? "Login" : "Sign Up"}

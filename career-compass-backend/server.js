@@ -16,7 +16,16 @@ const app = express();
 
 // Middleware
 app.use(express.json()); // Allows us to accept JSON data in the body
-app.use(cors()); // Enables Cross-Origin Resource Sharing
+
+// CORS Configuration - Allow both development and production origins
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(',')
+        : ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 
 
